@@ -11,6 +11,8 @@ const state = {
     status: 'idle',
     changes: [],
     jobData: null, // stores requirements, pricing, proposal
+    uploadFile: null, // stores explicitly dropped/selected file
+    inputMode: 'upload', // 'upload' or 'paste'
 };
 
 // ---- DOM Elements ----
@@ -45,6 +47,15 @@ const els = {
     companyName: $('#companyName'),
     contactName: $('#contactName'),
     contactEmail: $('#contactEmail'),
+    
+    // File upload elements
+    dropZone: $('#dropZone'),
+    browseFileBtn: $('#browseFileBtn'),
+    fileInput: $('#fileInput'),
+    selectedFile: $('#selectedFile'),
+    fileName: $('#fileName'),
+    fileSize: $('#fileSize'),
+    removeFileBtn: $('#removeFileBtn'),
 };
 
 // ---- Example RFP ----
@@ -127,12 +138,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Submit changes
     els.submitChangesBtn.addEventListener('click', submitChanges);
+
+    // Input mode tabs
+    $$('.input-tab').forEach(tab => {
+        tab.addEventListener('click', () => setInputMode(tab.dataset.mode));
+    });
+
+    // File Drag & Drop
+    els.dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        els.dropZone.classList.add('dragover');
+    });
+    els.dropZone.addEventListener('dragleave', () => {
+        els.dropZone.classList.remove('dragover');
+    });
+    els.dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        els.dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+
+    // File Click — entire drop zone is clickable
+    els.dropZone.addEventListener('click', () => els.fileInput.click());
+    els.browseFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent double-trigger from zone click
+        els.fileInput.click();
+    });
+    els.fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    // Remove File
+    els.removeFileBtn.addEventListener('click', () => {
+        state.uploadFile = null;
+        els.fileInput.value = '';
+        els.selectedFile.classList.add('hidden');
+        els.dropZone.style.display = 'block';
+    });
 });
+
+// ---- Input Modes & File ----
+function setInputMode(mode) {
+    state.inputMode = mode;
+    $$('.input-tab').forEach(t => t.classList.remove('active'));
+    $$('.input-mode-content').forEach(c => c.classList.remove('active'));
+    
+    $(`.input-tab[data-mode="${mode}"]`).classList.add('active');
+    $(`#mode-${mode}`).classList.add('active');
+}
+
+function handleFileSelect(file) {
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const validExts = ['.pdf', '.docx', '.txt'];
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+        alert("Invalid file type. Please upload a PDF, DOCX, or TXT file.");
+        return;
+    }
+    
+    state.uploadFile = file;
+    
+    // Convert size to human readable
+    let sizeStr = '';
+    if (file.size < 1024 * 1024) {
+        sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+    } else {
+        sizeStr = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    els.fileName.textContent = file.name;
+    els.fileSize.textContent = sizeStr;
+    
+    els.dropZone.style.display = 'none';
+    els.selectedFile.classList.remove('hidden');
+}
 
 // ---- Processing Flow ----
 async function startProcessing() {
+    // Validate input based on mode
+    if (state.inputMode === 'upload' && !state.uploadFile) {
+        alert('Please drop or select an RFP file first.');
+        return;
+    }
+    
     const rfpText = els.rfpInput.value.trim();
-    if (!rfpText) {
+    if (state.inputMode === 'paste' && !rfpText) {
         alert('Please paste an RFP document first.');
         return;
     }
@@ -148,18 +243,37 @@ async function startProcessing() {
     resetAgentChips();
 
     try {
-        // Create job
-        const res = await fetch('/api/process-rfp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                rfp_text: rfpText,
-                company_name: els.companyName.value || 'Ering Solutions',
-                contact_name: els.contactName.value || 'Sales Team',
-                contact_email: els.contactEmail.value || 'sales@eringsolutions.com',
-            }),
-        });
+        let res;
+        
+        if (state.inputMode === 'upload') {
+            // Upload via FormData
+            const formData = new FormData();
+            formData.append('file', state.uploadFile);
+            formData.append('company_name', els.companyName.value || 'Ering Solutions');
+            formData.append('contact_name', els.contactName.value || 'Sales Team');
+            formData.append('contact_email', els.contactEmail.value || 'sales@eringsolutions.com');
+            
+            res = await fetch('/api/upload-rfp', {
+                method: 'POST',
+                body: formData,
+            });
+        } else {
+            // Paste via JSON
+            res = await fetch('/api/process-rfp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rfp_text: rfpText,
+                    company_name: els.companyName.value || 'Ering Solutions',
+                    contact_name: els.contactName.value || 'Sales Team',
+                    contact_email: els.contactEmail.value || 'sales@eringsolutions.com',
+                }),
+            });
+        }
+        
         const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to process RFP');
+        
         state.jobId = data.job_id;
 
         // Start SSE streaming
@@ -235,6 +349,7 @@ function onPdfReady() {
     // Show download section
     showSection('downloadSection');
     els.downloadPdfBtn.href = `/api/download-pdf/${state.jobId}`;
+    els.downloadPdfBtn.download = `SME02_Quotation_${state.jobId}.pdf`;
     els.downloadMeta.textContent = `Proposal ${state.jobId.toUpperCase()} — Generated ${new Date().toLocaleString()}`;
 }
 

@@ -33,6 +33,9 @@ class PDFGenerator:
         # Add custom filters
         self.template_env.filters["format_currency"] = self._format_currency
         self.template_env.filters["format_number"] = self._format_number
+        
+        import markdown
+        self.template_env.filters["markdown"] = lambda text: markdown.markdown(text) if text else ""
 
     @staticmethod
     def _format_currency(value, currency="INR"):

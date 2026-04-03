@@ -201,7 +201,7 @@ class Orchestrator:
                     content=f"Re-running Junior Analyst with changes: {instructions}"
                 ))
 
-        reqs = await self.junior_analyst.analyze(
+        reqs, _ = await self.junior_analyst.analyze(
             rfp_text=state["rfp_input"].rfp_text,
             emit_message=emit,
             additional_instructions=instructions

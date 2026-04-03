@@ -66,8 +66,8 @@
             <div class="section-header">
                 <div class="section-number">01</div>
                 <div>
-                    <h2 class="section-title">Paste Your RFP</h2>
-                    <p class="section-desc">Enter the Request for Proposal document text below</p>
+                    <h2 class="section-title">Submit Your RFP</h2>
+                    <p class="section-desc">Upload a document or paste the RFP text below</p>
                 </div>
             </div>
 
@@ -87,16 +87,49 @@
                     </div>
                 </div>
 
-                <div class="textarea-wrapper">
-                    <textarea id="rfpInput" rows="16" placeholder="Paste your RFP document text here...
+                <div class="input-mode-tabs" id="inputModeTabs">
+                    <button class="input-tab active" data-mode="upload">Upload File</button>
+                    <button class="input-tab" data-mode="paste">Paste Text</button>
+                </div>
+                
+                <div class="input-mode-content active" id="mode-upload">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <polyline points="9 15 12 12 15 15"></polyline>
+                            </svg>
+                        </div>
+                        <p class="drop-zone-text">Drag &amp; Drop RFP Document Here</p>
+                        <p class="drop-zone-hint">Supports .PDF, .DOCX, .TXT</p>
+                        <button class="btn-secondary drop-zone-btn" id="browseFileBtn">Browse Files</button>
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.doc" style="display:none;">
+                    </div>
+                    
+                    <div class="selected-file hidden" id="selectedFile">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name" id="fileName">document.pdf</span>
+                            <span class="file-size" id="fileSize">2.4 MB</span>
+                        </div>
+                        <button class="btn-secondary" id="removeFileBtn" style="padding:4px 8px;">✕ Remove</button>
+                    </div>
+                </div>
+
+                <div class="input-mode-content" id="mode-paste">
+                    <div class="textarea-wrapper">
+                        <textarea id="rfpInput" rows="16" placeholder="Paste your RFP document text here...
 
 Example:
 ## Request for Proposal (RFP) - IT Infrastructure Upgrade
 **Issued By:** Tech Solutions Inc.
 ..."></textarea>
-                    <div class="textarea-footer">
-                        <span class="char-count" id="charCount">0 characters</span>
-                        <button class="btn-secondary" id="loadExampleBtn">Load Example RFP</button>
+                        <div class="textarea-footer">
+                            <span class="char-count" id="charCount">0 characters</span>
+                            <button class="btn-secondary" id="loadExampleBtn">Load Example RFP</button>
+                        </div>
                     </div>
                 </div>
 
@@ -239,7 +272,7 @@ Example:
                 </div>
                 <h3>SME02 Professional Quotation</h3>
                 <p class="download-meta" id="downloadMeta">Generated with AI-powered analysis</p>
-                <a class="btn-primary download-btn" id="downloadPdfBtn" href="#" download>
+                <a class="btn-primary download-btn" id="downloadPdfBtn" href="#" target="_blank">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>

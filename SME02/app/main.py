@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +22,7 @@ from app.models import (
     AgentRole, MessageType
 )
 from app.services.orchestrator import orchestrator
+from app.services.document_parser import document_parser
 
 app = FastAPI(
     title="SME02 — Autonomous RFP Response Orchestrator",
@@ -56,7 +57,38 @@ async def serve_frontend():
 
 @app.post("/api/process-rfp")
 async def process_rfp(rfp_input: RFPInput):
-    """Start processing an RFP. Returns a job ID for SSE streaming."""
+    """Start processing an RFP from raw text."""
+    job_id = orchestrator.create_job(rfp_input)
+    return {"job_id": job_id, "status": "created"}
+
+
+@app.post("/api/upload-rfp")
+async def upload_rfp(
+    file: UploadFile = File(...),
+    company_name: str = Form(default="Ering Solutions"),
+    contact_name: str = Form(default="Sales Team"),
+    contact_email: str = Form(default="sales@eringsolutions.com"),
+    contact_phone: str = Form(default="+91-9876543210")
+):
+    """Upload an RFP document, extract text, and start processing."""
+    file_bytes = await file.read()
+    
+    try:
+        extracted_text = document_parser.extract_text(file.filename, file_bytes)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    if not extracted_text.strip():
+        raise HTTPException(status_code=400, detail="Document appears to be empty or unreadable.")
+        
+    rfp_input = RFPInput(
+        rfp_text=extracted_text,
+        company_name=company_name,
+        contact_name=contact_name,
+        contact_email=contact_email,
+        contact_phone=contact_phone
+    )
+    
     job_id = orchestrator.create_job(rfp_input)
     return {"job_id": job_id, "status": "created"}
 
@@ -220,7 +252,7 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
     )
 
 
-@app.post("/api/approve/{job_id}")
+@app.get("/api/approve/{job_id}")
 async def approve_proposal(job_id: str):
     """Approve the proposal and generate PDF."""
     job = orchestrator.get_job(job_id)
