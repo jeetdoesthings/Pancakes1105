@@ -18,6 +18,7 @@ from app.config import settings
 from app.tools.pricing_tools import (
     get_internal_pricing_tool,
     get_competitor_data_tool,
+    research_market_rates_tool,
     suggest_value_add_tool,
     _load_json
 )
@@ -139,11 +140,30 @@ class PricingStrategist:
 
                 comp_tool_response = get_competitor_data_tool.invoke(product["id"])
                 comp_prices = []
+                market_research_context = ""
+                
                 if not comp_tool_response.startswith("No "):
-                    try:
-                        comp_prices = json.loads(comp_tool_response)
-                    except Exception:
-                        pass
+                    if "BENCHMARKS_EXIST" in comp_tool_response:
+                        market_research_context = comp_tool_response.replace("BENCHMARKS_EXIST:", "Local Benchmarks:").strip()
+                        # Optional live search to augment
+                        search_query = f"cost of {product['name']} in India"
+                        await emit(MessageType.ACTION, f"Found local benchmarks for {product['name']}. Attempting to augment with live search...")
+                        live_res = research_market_rates_tool.invoke(search_query)
+                        if live_res:
+                            market_research_context += "\n" + live_res
+                    else:
+                        try:
+                            comp_prices = json.loads(comp_tool_response)
+                        except Exception:
+                            market_research_context = comp_tool_response
+                else:
+                    # No local data at all - perform live search
+                    search_query = f"cost of {product['name']} in India"
+                    await emit(MessageType.ACTION, f"No local competitor data. Performing live market research for: {product['name']}...")
+                    live_res = research_market_rates_tool.invoke(search_query)
+                    if live_res:
+                        market_research_context = live_res
+
                 comp_prices_floats = [c["price"] for c in comp_prices]
                 
                 # Deterministic pricing algorithm (MATCH / PIVOT / BASELINE)
@@ -160,8 +180,17 @@ class PricingStrategist:
                 # We record the lowest comp price for analysis display
                 lowest_comp = min(comp_prices_floats) if comp_prices_floats else 0.0
 
+                display_comp_name = "Unknown"
+                if comp_prices:
+                    display_comp_name = ", ".join([c.get("competitor_name", c.get("competitor", "Unknown")) for c in comp_prices])
+                elif market_research_context:
+                    if "Local Benchmarks:" in market_research_context:
+                        display_comp_name = "Market Benchmarks"
+                    else:
+                        display_comp_name = "Live Web Research"
+
                 analysis = CompetitorAnalysis(
-                    competitor_name=", ".join([c.get("competitor_name", c.get("competitor", "Unknown")) for c in comp_prices]) if comp_prices else "None",
+                    competitor_name=display_comp_name,
                     product_id=product["id"],
                     competitor_price=lowest_comp,
                     our_price=final_price,
@@ -172,7 +201,6 @@ class PricingStrategist:
                 )
 
                 if strategy_type == "PIVOT":
-                    value_differentiation_triggered = True
                     await emit(MessageType.THINKING,
                         f"⚠️ PIVOT triggered: competitor ₹{lowest_comp:,.0f} vs our cost ₹{base_cost:,.0f}. "
                         f"Adding value-add bundles."
@@ -199,16 +227,27 @@ class PricingStrategist:
                             is_value_add=True
                         ))
                 elif strategy_type == "BASELINE":
-                    await emit(MessageType.THINKING,
-                        f"No competitor data for '{product['name']}'. Using BASELINE pricing at target margin."
-                    )
+                    if market_research_context:
+                        await emit(MessageType.THINKING,
+                            f"Using Market Research for '{product['name']}'"
+                        )
+                        analysis.recommendation = "Pricing accurately aligned with competitive local market benchmarks."
+                    else:
+                        await emit(MessageType.THINKING,
+                            f"No competitor data for '{product['name']}'. Using BASELINE pricing at target margin."
+                        )
                 else:
                     await emit(MessageType.THINKING, f"✅ MATCH strategy: Best competitor ₹{lowest_comp:,.0f}, our price ₹{final_price:,.0f}.")
                     
                 competitor_analyses.append(analysis)
+                
+                comp_display_name = analysis.competitor_name
+                if comp_display_name == "None" and market_research_context:
+                    comp_display_name = "Market Benchmarks"
+                
                 analysis_details.append(
-                    f"{product['name']} vs {analysis.competitor_name}: "
-                    f"Our ₹{unit_price:,.0f} vs Their ₹{lowest_comp:,.0f} — {analysis.recommendation}"
+                    f"{product['name']} vs {comp_display_name}: "
+                    f"Our ₹{unit_price:,.0f} vs Their {('₹'+format(lowest_comp, ',.0f')) if lowest_comp > 0 else 'Unknown'} — {market_research_context if market_research_context else analysis.recommendation}"
                 )
             else:
                 # No match - use estimated pricing

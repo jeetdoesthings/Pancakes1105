@@ -27,11 +27,13 @@ def get_internal_pricing_tool(product_id_or_keyword: str) -> str:
 
 @tool
 def get_competitor_data_tool(product_id: str) -> str:
-    """Queries competitor intelligence to find what competitors are charging for an exact product_id.
-    Use this to perform competitive pricing analysis and see if our standard price is competitive.
+    """Queries local competitor intelligence to find what competitors are charging for an exact product_id.
+    If this returns no data, you SHOULD use the research_market_rates_tool to find dynamic market data.
     """
     data = _load_json("competitor_data.json")
     results = []
+    
+    # Check old structure (competitors array)
     for comp in data.get("competitors", []):
         for off in comp.get("offerings", []):
             if off["product_id"] == product_id:
@@ -41,9 +43,39 @@ def get_competitor_data_tool(product_id: str) -> str:
                     "currency": off["currency"],
                     "value_adds": off.get("value_adds", [])
                 })
+    
     if results:
         return json.dumps(results, indent=2)
-    return f"No competitor data found for product_id: '{product_id}'."
+    
+    # Check new structure (benchmarking)
+    benchmarks = data.get("competitor_benchmarking", {})
+    if benchmarks:
+        return f"BENCHMARKS_EXIST: {json.dumps(benchmarks)}"
+        
+    return f"No competitor data found for product_id: '{product_id}'. Use research_market_rates_tool for dynamic info."
+
+@tool
+def research_market_rates_tool(query: str) -> str:
+    """Performs a live web search to find current market rates, competitor prices, or benchmarking for a service or product.
+    Use this when local 'competitor_data.json' is missing information for an RFP item.
+    Example query: 'market rate for GIS property survey per unit in India 2024'
+    """
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        return "" # Silently fail if not installed to avoid cluttering rationale
+        
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=3, region='in-en'))
+            if results:
+                # Filter out likely irrelevant/chinese fallback results by checking ascii or simple heuristics if needed,
+                # but adding region='in-en' usually fixes it.
+                formatted = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
+                return f"Live Market Research Results for '{query}':\n{formatted}"
+    except Exception as e:
+        pass
+    return ""
 
 @tool
 def suggest_value_add_tool(category: str) -> str:

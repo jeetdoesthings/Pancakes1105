@@ -22,7 +22,8 @@ aiofiles==24.1.0
 PyMuPDF>=1.24.0
 python-docx==1.1.0
 markdown==3.10.2
-pydyf==0.11.0
+pypdf==5.1.0
+duckduckgo-search==7.3.2
 
 # Vector RAG Upgrade
 chromadb==0.5.5; python_version < "3.13"

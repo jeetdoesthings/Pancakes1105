@@ -1,91 +1,71 @@
 {
-  "competitors": [
-    {
-      "name": "Competitor X (TechVista Solutions)",
-      "offerings": [
-        {
-          "product_id": "SERVER_R760",
-          "price": 530000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "CISCO_9300",
-          "price": 145000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "CISCO_9200",
-          "price": 48000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "VMWARE_VSPHERE",
-          "price": 79000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "INSTALLATION_CONFIG",
-          "price": 140000,
-          "currency": "INR",
-          "value_adds": []
-        }
-      ]
+  "project_name": "GIS Implementation & Property Survey - Lalganj",
+  "currency": "INR",
+  "total_contract_value": 4880000,
+  "pricing_model": "Lumpsum with Milestone Payments",
+  "cost_breakdown": {
+    "survey_and_data_collection": {
+      "estimated_cost": 1952000,
+      "percentage_of_total": 40,
+      "description": "Door-to-door property survey, POI mapping, and ground-truthing."
     },
-    {
-      "name": "Competitor Y (DataFlow Systems)",
-      "offerings": [
-        {
-          "product_id": "SERVER_R760",
-          "price": 440000,
-          "currency": "INR",
-          "value_adds": ["Basic 6-month support"]
-        },
-        {
-          "product_id": "CISCO_9300",
-          "price": 115000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "VMWARE_VSPHERE",
-          "price": 60000,
-          "currency": "INR",
-          "value_adds": []
-        },
-        {
-          "product_id": "DATA_MIGRATION",
-          "price": 170000,
-          "currency": "INR",
-          "value_adds": []
-        }
-      ]
+    "gis_base_map_enhancement": {
+      "estimated_cost": 732000,
+      "percentage_of_total": 15,
+      "description": "Procurement and enhancement of base maps, UAV/LiDAR survey, and digitization."
     },
-    {
-      "name": "Competitor Z (InfraPrime Corp)",
-      "offerings": [
-        {
-          "product_id": "SERVER_R760",
-          "price": 545000,
-          "currency": "INR",
-          "value_adds": ["1-year basic support", "Free rack mounting"]
-        },
-        {
-          "product_id": "CISCO_9300",
-          "price": 155000,
-          "currency": "INR",
-          "value_adds": ["Free cabling"]
-        },
-        {
-          "product_id": "TRAINING_2DAY",
-          "price": 70000,
-          "currency": "INR",
-          "value_adds": ["Online follow-up session"]
-        }
-      ]
+    "software_development_and_hosting": {
+      "estimated_cost": 1220000,
+      "percentage_of_total": 25,
+      "description": "Development of GIS application, property information system, and cloud hosting for 1 year."
+    },
+    "master_planning_and_analysis": {
+      "estimated_cost": 488000,
+      "percentage_of_total": 10,
+      "description": "Data analysis and preparation of the GIS-based Master Plan."
+    },
+    "handholding_and_maintenance": {
+      "estimated_cost": 488000,
+      "percentage_of_total": 10,
+      "description": "On-site support, training, and database updates for the first year."
     }
-  ]
+  },
+  "milestone_payments": [
+    {
+      "milestone": "Inception Report",
+      "payment_percentage": 10,
+      "amount": 488000
+    },
+    {
+      "milestone": "Submission of Draft Base Maps",
+      "payment_percentage": 20,
+      "amount": 976000
+    },
+    {
+      "milestone": "Completion of Field Survey",
+      "payment_percentage": 30,
+      "amount": 1464000
+    },
+    {
+      "milestone": "Beta Launch of GIS Application",
+      "payment_percentage": 20,
+      "amount": 976000
+    },
+    {
+      "milestone": "Final Handover & Training",
+      "payment_percentage": 20,
+      "amount": 976000
+    }
+  ],
+  "tax_assumptions": {
+    "gst_rate": 0.18,
+    "gst_inclusive": true,
+    "tax_amount": 744406.78,
+    "base_value": 4135593.22
+  },
+  "competitor_benchmarking": {
+    "gyan_geomatics_est_margin": "15-20%",
+    "skylan_it_est_margin": "20-25%",
+    "market_avg_per_property_cost": "INR 150 - 250"
+  }
 }

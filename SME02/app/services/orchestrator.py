@@ -220,7 +220,7 @@ class Orchestrator:
         await emit(AgentMessage(
             agent=AgentRole.ORCHESTRATOR,
             message_type=MessageType.ACTION,
-            content="Activating Pricing Strategist agent for competitive analysis..."
+            content="Activating Pricing Strategist agent for competitive analysis & dynamic market research..."
         ))
 
         instructions = ""

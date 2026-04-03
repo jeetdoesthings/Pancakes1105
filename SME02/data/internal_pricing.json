@@ -1,84 +1,84 @@
 {
   "products": [
     {
-      "id": "SERVER_R760",
-      "name": "Dell PowerEdge R760 Server",
-      "category": "hardware",
-      "base_cost": 450000,
-      "standard_price": 550000,
-      "min_margin_percent": 0.15,
-      "currency": "INR",
-      "description": "High-performance 2U rack server with Intel Xeon processors, ideal for enterprise workloads, virtualization, and data-intensive applications."
-    },
-    {
-      "id": "CISCO_9300",
-      "name": "Cisco Catalyst 9300 Core Switch",
-      "category": "hardware",
-      "base_cost": 120000,
-      "standard_price": 150000,
-      "min_margin_percent": 0.20,
-      "currency": "INR",
-      "description": "Enterprise-class stackable core switch with advanced security, SD-Access support, and high-density multigigabit capabilities."
-    },
-    {
-      "id": "CISCO_9200",
-      "name": "Cisco Catalyst 9200 Access Switch",
-      "category": "hardware",
-      "base_cost": 35000,
-      "standard_price": 50000,
-      "min_margin_percent": 0.18,
-      "currency": "INR",
-      "description": "Entry-level enterprise access switch with PoE+, Cisco DNA, and simplified network management."
-    },
-    {
-      "id": "VMWARE_VSPHERE",
-      "name": "VMware vSphere Enterprise Plus License",
+      "id": "GIS_APP_DEV_CUSTOM",
+      "name": "GIS Application & Dashboard Customization",
       "category": "software",
-      "base_cost": 65000,
-      "standard_price": 80000,
-      "min_margin_percent": 0.18,
-      "currency": "INR",
-      "description": "Industry-leading virtualization platform with DRS, HA, vMotion, and advanced resource management per host."
+      "standard_price": 850000,
+      "min_margin_percent": 0.35,
+      "description": "Customization of GIS dashboard for Nagar Panchayat Lalganj, including integration with existing MIS systems and census records.",
+      "base_cost": 552500.0,
+      "currency": "INR"
     },
     {
-      "id": "PREMIUM_SUPPORT_1YR",
-      "name": "1-Year Premium Support Package",
-      "category": "service",
-      "base_cost": 100000,
-      "standard_price": 120000,
-      "min_margin_percent": 0.10,
-      "currency": "INR",
-      "description": "24/7 priority technical support, proactive monitoring, quarterly health checks, and 4-hour response SLA for critical issues."
+      "id": "MOBILE_APP_FIELD_DATA",
+      "name": "Mobile App for Field Data Collection",
+      "category": "software",
+      "standard_price": 450000,
+      "min_margin_percent": 0.3,
+      "description": "Android/iOS mobile application for on-field data collection, geotagging, and real-time synchronization with the central GIS server.",
+      "base_cost": 315000.0,
+      "currency": "INR"
     },
     {
-      "id": "DATA_MIGRATION",
-      "name": "Data Migration Service",
+      "id": "UAV_LIDAR_SURVEY",
+      "name": "UAV and LiDAR Survey Services",
       "category": "service",
-      "base_cost": 150000,
+      "standard_price": 1200000,
+      "min_margin_percent": 0.25,
+      "description": "High-resolution UAV aerial photography and LiDAR survey for topographic mapping and 3D modeling of the municipal area.",
+      "base_cost": 900000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "PROPERTY_POI_MAPPING",
+      "name": "Property & POI Mapping and Geotagging",
+      "category": "service",
+      "standard_price": 950000,
+      "min_margin_percent": 0.2,
+      "description": "Door-to-door property survey, Point of Interest (POI) mapping, and geotagging of all municipal assets and boundaries.",
+      "base_cost": 760000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "BASE_MAP_DIGITIZATION",
+      "name": "Geo-Referencing & Digitization of Existing Maps",
+      "category": "service",
+      "standard_price": 400000,
+      "min_margin_percent": 0.22,
+      "description": "Scanning, geo-referencing, and vectorization of existing municipal paper maps and district boundary records.",
+      "base_cost": 312000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "MASTER_PLAN_PREP",
+      "name": "Data Analysis & Master Plan Preparation",
+      "category": "service",
+      "standard_price": 550000,
+      "min_margin_percent": 0.28,
+      "description": "Comprehensive data analysis of surveyed information and preparation of the GIS-based Master Plan for urban development.",
+      "base_cost": 396000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "CLOUD_HOSTING_MAINT",
+      "name": "Cloud Hosting & Technical Support (4 Months)",
+      "category": "software",
+      "standard_price": 280000,
+      "min_margin_percent": 0.4,
+      "description": "Secure cloud infrastructure hosting for the GIS platform and 4 months of technical handholding and maintenance support.",
+      "base_cost": 168000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "STAFF_WORKSHOPS_TRAINING",
+      "name": "Internal Staff Training & Workshops",
+      "category": "service",
       "standard_price": 200000,
-      "min_margin_percent": 0.15,
-      "currency": "INR",
-      "description": "Comprehensive data migration from legacy systems including planning, execution, validation, and rollback procedures."
-    },
-    {
-      "id": "INSTALLATION_CONFIG",
-      "name": "Installation & Configuration Service",
-      "category": "service",
-      "base_cost": 100000,
-      "standard_price": 150000,
-      "min_margin_percent": 0.15,
-      "currency": "INR",
-      "description": "Full on-site installation and configuration of all hardware and software components including testing and documentation."
-    },
-    {
-      "id": "TRAINING_2DAY",
-      "name": "2-Day On-site Training",
-      "category": "service",
-      "base_cost": 50000,
-      "standard_price": 80000,
-      "min_margin_percent": 0.20,
-      "currency": "INR",
-      "description": "Comprehensive 2-day on-site training program for IT staff covering operations, administration, and troubleshooting."
+      "min_margin_percent": 0.2,
+      "description": "Capacity building workshops and hands-on training for Nagar Panchayat staff on using the GIS dashboard and mobile app.",
+      "base_cost": 160000.0,
+      "currency": "INR"
     }
   ]
 }

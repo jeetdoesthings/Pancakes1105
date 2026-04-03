@@ -625,7 +625,7 @@ function populateReview() {
                         ${pricing.competitor_analyses.map(ca => `
                             <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
                                 <strong>${ca.competitor_name}</strong> — ${ca.product_id}<br>
-                                Their Price: ₹${formatNumber(ca.competitor_price)} | Our Price: ₹${formatNumber(ca.our_price)}<br>
+                                ${ca.competitor_price > 0 ? `Their Price: ₹${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ₹${formatNumber(ca.our_price)}<br>
                                 <span style="color:var(--text-muted);font-size:12px">${ca.recommendation}</span>
                             </div>
                         `).join('')}
