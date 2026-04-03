@@ -2,76 +2,62 @@
 
 An AI-powered multi-agent system that automates the Request for Proposal (RFP) response process for Small and Medium Enterprises (SMEs), enabling them to generate professional, strategically priced quotations in minutes rather than days.
 
-## Features
+## 🚀 Key Upgrades (v2.0)
+- **Zero-Dependency PDF Engine**: Migrated from WeasyPrint to **ReportLab Platypus**, eliminating complex system-level dependencies (Pango/Cairo) and ensuring boardroom-ready, high-fidelity PDF output on any OS.
+- **OpenAI-Powered Intelligence**: Transitioned from local Ollama to **OpenAI (GPT-4o-mini)** for superior reasoning, extraction, and strategic copywriting.
+- **Windows Stability**: Hardened UTF-8 encoding across the streaming backend to support global currency symbols (₹, $, €) without crashes.
 
-- **Multi-Agent Framework**: Three specialized agents working in concert
-  - **Junior Analyst**: Parses unstructured RFP documents and extracts key requirements
-  - **Pricing Strategist**: Analyzes internal pricing, competitor data, and applies value-differentiation strategies
-  - **Senior Copywriter**: Drafts professional proposal content
+## 🤖 Multi-Agent Framework
+The system uses a sequential DAG (Directed Acyclic Graph) powered by **LangGraph**:
+1. **Junior Analyst**: Parses unstructured RFP documents and extracts key requirements with intelligent data normalization.
+2. **Pricing Strategist**: Analyzes internal pricing and competitor data, applying value-differentiation strategies when undercut.
+3. **Senior Copywriter**: Drafts persuasive, professional proposal content based on the final strategy.
 
-- **Intelligent Value-Differentiation**: When competitors undercut on price, the system recommends non-monetary value-adds instead of racing to the bottom
+## 🛠️ Tech Stack
+- **Backend**: FastAPI (Python 3.10+)
+- **Orchestration**: LangChain & LangGraph
+- **LLM**: OpenAI (GPT-4o-mini) / DeepSeek
+- **PDF Generation**: ReportLab (Programmatic Layout)
+- **Frontend**: Glassmorphic Vanilla Web Components (HTML/CSS/JS)
 
-- **Glass Box UI**: Real-time visibility into agent reasoning and decision-making
+## 📦 Setup & Installation
 
-- **Boardroom-Ready PDF Output**: Professional, formatted quotation documents
-
-## Tech Stack
-
-- **Backend**: FastAPI (Python)
-- **Multi-Agent Framework**: LangChain
-- **LLM**: Google Gemini API (Free Tier)
-- **PDF Generation**: WeasyPrint
-- **Frontend**: Vanilla HTML/CSS/JavaScript
-
-## Setup
-
-1. Install dependencies:
+1. **Clone & Install Dependencies**:
 ```bash
+cd SME02
 pip install -r requirements.txt
 ```
 
-2. Set up your Google Gemini API key:
-```bash
-export GEMINI_API_KEY=your_api_key_here
+2. **Configure Environment**:
+Create a `.env` file in the root directory:
+```env
+OPENAI_API_KEY=sk-...
+LLM_MODEL_NAME=gpt-4o-mini
 ```
 
-3. Run the application:
+3. **Run the Application**:
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-4. Open http://localhost:8000 in your browser
+4. **Access the Dashboard**:
+Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-## Project Structure
-
+## 📁 Project Structure
 ```
 SME02/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application
-│   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── junior_analyst.py    # RFP parsing agent
-│   │   ├── pricing_strategist.py # Pricing analysis agent
-│   │   └── senior_copywriter.py  # Proposal drafting agent
+│   ├── main.py              # FastAPI Entry Point (UTF-8 Hardened)
+│   ├── agents/              # Specialist AI Agents
 │   ├── services/
-│   │   ├── __init__.py
-│   │   ├── pdf_generator.py     # PDF generation service
-│   │   └── orchestrator.py      # Multi-agent orchestrator
-│   └── templates/
-│       └── quotation.html       # PDF template
-├── data/
-│   ├── internal_pricing.json    # Mock internal pricing data
-│   └── competitor_data.json     # Mock competitor data
-├── static/
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── app.js
-├── requirements.txt
-└── README.md
+│   │   ├── pdf_generator.py # ReportLab Boardroom-Ready Engine
+│   │   └── orchestrator.py  # LangGraph Orchestration Logic
+│   └── models.py            # Pydantic Core Models
+├── data/                    # Mock Pricing & Competitor Data
+├── static/                  # Glassmorphic Frontend
+├── requirements.txt         # Optimized Dependency List
+└── README.md                # Documentation
 ```
 
-## License
-
+## 📄 License
 MIT

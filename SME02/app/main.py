@@ -48,7 +48,7 @@ app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 async def serve_frontend():
     """Serve the main frontend page."""
     index_path = os.path.join(settings.STATIC_DIR, "index.html")
-    with open(index_path, "r") as f:
+    with open(index_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 
@@ -88,7 +88,7 @@ async def stream_processing(job_id: str):
                         "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    })
+                    }, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     if process_task.done():
@@ -103,7 +103,7 @@ async def stream_processing(job_id: str):
                             "extracted_requirements": final_job.extracted_requirements.model_dump() if final_job.extracted_requirements else None,
                             "pricing_strategy": final_job.pricing_strategy.model_dump() if final_job.pricing_strategy else None,
                             "proposal_draft": final_job.proposal_draft.model_dump() if final_job.proposal_draft else None,
-                        })
+                        }, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
 
                         # Drain remaining messages
@@ -114,7 +114,7 @@ async def stream_processing(job_id: str):
                                 "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
                                 "content": msg.content,
                                 "timestamp": msg.timestamp or datetime.now().isoformat(),
-                            })
+                            }, ensure_ascii=False)
                             yield f"data: {data}\n\n"
 
                         break
@@ -187,7 +187,7 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
                         "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    })
+                    }, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     if process_task.done():
@@ -201,7 +201,7 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
                             "extracted_requirements": final_job.extracted_requirements.model_dump() if final_job.extracted_requirements else None,
                             "pricing_strategy": final_job.pricing_strategy.model_dump() if final_job.pricing_strategy else None,
                             "proposal_draft": final_job.proposal_draft.model_dump() if final_job.proposal_draft else None,
-                        })
+                        }, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
                         break
                     yield f": keepalive\n\n"
@@ -246,7 +246,7 @@ async def approve_proposal(job_id: str):
                         "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    })
+                    }, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     if process_task.done():
@@ -258,7 +258,7 @@ async def approve_proposal(job_id: str):
                             "timestamp": datetime.now().isoformat(),
                             "job_status": final_job.status.value,
                             "pdf_ready": final_job.pdf_path is not None,
-                        })
+                        }, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
                         break
                     yield f": keepalive\n\n"

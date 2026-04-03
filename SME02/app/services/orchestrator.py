@@ -201,12 +201,12 @@ class Orchestrator:
                     content=f"Re-running Junior Analyst with changes: {instructions}"
                 ))
 
-        reqs = await self.junior_analyst.analyze(
+        requirements, raw_dict = await self.junior_analyst.analyze(
             rfp_text=state["rfp_input"].rfp_text,
             emit_message=emit,
             additional_instructions=instructions
         )
-        return {"extracted_requirements": reqs, "status": JobStatus.ANALYZING}
+        return {"extracted_requirements": requirements, "status": JobStatus.ANALYZING}
 
     async def _node_pricing_strategist(self, state: GraphState, config: RunnableConfig):
         emit = config["configurable"].get("emit")
