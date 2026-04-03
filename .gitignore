@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+SME02/venv/
+venv/
+
+# Environment files
+.env
+SME02/.env
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Mac
+.DS_Store
