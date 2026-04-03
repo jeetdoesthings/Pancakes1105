@@ -15,6 +15,14 @@ from app.models import (
     AgentMessage, AgentRole, MessageType
 )
 from app.config import settings
+from app.tools.pricing_tools import (
+    get_internal_pricing_tool,
+    get_competitor_data_tool,
+    suggest_value_add_tool,
+    _load_json
+)
+from app.pricing_algorithm import compute_price
+from app.product_normalizer import normalize_product_name
 
 
 STRATEGY_PROMPT = PromptTemplate.from_template("""You are a "Pricing Strategist" — an expert competitive pricing analyst for an SME.
@@ -42,7 +50,7 @@ The rationale should explain:
 1. How our pricing compares to the competition
 2. Why specific value-adds are being recommended (if any)
 3. The overall win strategy for this proposal
-4. Why the customer should choose us over cheaper competitors
+4. Why the customer should choose us over cheaper competitors and what is our competitive advantage
 
 Return ONLY a JSON object:
 {{
@@ -64,42 +72,9 @@ class PricingStrategist:
             max_tokens=2048,
         )
         self.role = AgentRole.PRICING_STRATEGIST
-        self.internal_pricing = self._load_json("internal_pricing.json")
-        self.competitor_data = self._load_json("competitor_data.json")
-        self.value_adds_catalog = self._load_json("value_adds.json")
-        self.tax_data = self._load_json("tax_rates.json")
-
-    def _load_json(self, filename: str) -> dict:
-        filepath = os.path.join(settings.DATA_DIR, filename)
-        with open(filepath, "r") as f:
-            return json.load(f)
-
-    def _find_product(self, item_name: str) -> Optional[dict]:
-        """Match a scope item to our internal product catalog."""
-        item_lower = item_name.lower()
-        for product in self.internal_pricing.get("products", []):
-            product_lower = product["name"].lower()
-            product_id_lower = product["id"].lower()
-            # Match by name keywords or ID
-            if (product_id_lower in item_lower.replace(" ", "_") or
-                any(kw in item_lower for kw in product_lower.split()[:3]) or
-                any(kw in product_lower for kw in item_lower.split()[:3])):
-                return product
-        return None
-
-    def _find_competitor_prices(self, product_id: str) -> list[dict]:
-        """Find competitor prices for a given product."""
-        results = []
-        for competitor in self.competitor_data.get("competitors", []):
-            for offering in competitor.get("offerings", []):
-                if offering["product_id"] == product_id:
-                    results.append({
-                        "competitor_name": competitor["name"],
-                        "price": offering["price"],
-                        "currency": offering["currency"],
-                        "value_adds": offering.get("value_adds", [])
-                    })
-        return results
+        self.tax_data = _load_json("tax_rates.json")
+        self.internal_pricing = _load_json("internal_pricing.json")
+        self.competitor_data = _load_json("competitor_data.json")
 
     async def analyze(
         self,
@@ -130,8 +105,18 @@ class PricingStrategist:
         for scope_item in requirements.scope_items:
             await emit(MessageType.ACTION, f"Analyzing pricing for: {scope_item.item_name} (Qty: {scope_item.quantity})...")
 
-            # Match to internal catalog
-            product = self._find_product(scope_item.item_name)
+            # Product Normalization Layer — fuzzy match to internal catalog
+            product = normalize_product_name(scope_item.item_name)
+            if not product:
+                # Fallback: try the keyword tool for broader matching
+                internal_tool_response = get_internal_pricing_tool.invoke(scope_item.item_name)
+                if not internal_tool_response.startswith("No "):
+                    try:
+                        product_list = json.loads(internal_tool_response)
+                        if product_list:
+                            product = product_list[0]
+                    except Exception:
+                        pass
 
             if product:
                 unit_price = product["standard_price"]
@@ -152,83 +137,79 @@ class PricingStrategist:
                     matched_product_id=product["id"],
                 ))
 
-                # Competitor analysis
-                comp_prices = self._find_competitor_prices(product["id"])
-                for comp in comp_prices:
-                    price_diff = unit_price - comp["price"]
-                    price_diff_pct = (price_diff / unit_price) * 100 if unit_price > 0 else 0
-                    can_match = comp["price"] >= base_cost * (1 + product["min_margin_percent"])
+                comp_tool_response = get_competitor_data_tool.invoke(product["id"])
+                comp_prices = []
+                if not comp_tool_response.startswith("No "):
+                    try:
+                        comp_prices = json.loads(comp_tool_response)
+                    except Exception:
+                        pass
+                comp_prices_floats = [c["price"] for c in comp_prices]
+                
+                # Deterministic pricing algorithm (MATCH / PIVOT / BASELINE)
+                final_price, strategy_type, rationale = compute_price(
+                    cost=base_cost,
+                    competitor_prices=comp_prices_floats,
+                    margin=product["min_margin_percent"],
+                    budget=requirements.budget_amount if requirements.budget_amount > 0 else None,
+                )
+                
+                unit_price = final_price
+                can_match = (strategy_type == "MATCH")
+                
+                # We record the lowest comp price for analysis display
+                lowest_comp = min(comp_prices_floats) if comp_prices_floats else 0.0
 
-                    analysis = CompetitorAnalysis(
-                        competitor_name=comp["competitor_name"],
-                        product_id=product["id"],
-                        competitor_price=comp["price"],
-                        our_price=unit_price,
-                        price_difference=price_diff,
-                        price_difference_pct=price_diff_pct,
-                        can_match=can_match,
-                        recommendation="",
-                        value_adds_suggested=[]
+                analysis = CompetitorAnalysis(
+                    competitor_name=", ".join([c.get("competitor_name", c.get("competitor", "Unknown")) for c in comp_prices]) if comp_prices else "None",
+                    product_id=product["id"],
+                    competitor_price=lowest_comp,
+                    our_price=final_price,
+                    price_difference=final_price - lowest_comp,
+                    price_difference_pct=((final_price - lowest_comp) / final_price) * 100 if final_price > 0 else 0,
+                    can_match=can_match,
+                    recommendation=rationale
+                )
+
+                if strategy_type == "PIVOT":
+                    value_differentiation_triggered = True
+                    await emit(MessageType.THINKING,
+                        f"⚠️ PIVOT triggered: competitor ₹{lowest_comp:,.0f} vs our cost ₹{base_cost:,.0f}. "
+                        f"Adding value-add bundles."
                     )
-
-                    if comp["price"] < base_cost:
-                        # VALUE-DIFFERENTIATION PIVOT!
-                        value_differentiation_triggered = True
-                        await emit(MessageType.THINKING,
-                            f"⚠️ CRITICAL: {comp['competitor_name']} is offering {product['name']} "
-                            f"at ₹{comp['price']:,.0f} — BELOW our base cost of ₹{base_cost:,.0f}! "
-                            f"Direct price match would be UNPROFITABLE."
-                        )
-                        await emit(MessageType.ACTION,
-                            f"🔄 Initiating VALUE-DIFFERENTIATION PIVOT: Instead of matching the "
-                            f"unprofitable price, recommending strategic value-adds to enhance "
-                            f"our proposal's competitiveness..."
-                        )
-
-                        # Select appropriate value-adds
-                        suggested_adds = self._select_value_adds(product["category"])
-                        analysis.recommendation = (
-                            f"DO NOT price match. Competitor price ₹{comp['price']:,.0f} is below "
-                            f"our base cost ₹{base_cost:,.0f}. Pivoting to value-differentiation strategy."
-                        )
-                        analysis.value_adds_suggested = [va["name"] for va in suggested_adds]
-
-                        for va in suggested_adds:
-                            if not any(v.item_name == va["name"] for v in value_add_items):
-                                value_add_items.append(LineItem(
-                                    item_name=va["name"],
-                                    description=va["description"],
-                                    quantity=1,
-                                    unit_price=0,  # Free value-add
-                                    total_price=0,
-                                    is_value_add=True,
-                                ))
-                                await emit(MessageType.RESULT,
-                                    f"✅ Value-Add Recommended: {va['name']} — {va['description']} "
-                                    f"(included at NO additional cost to differentiate our proposal)"
-                                )
-                    elif not can_match:
-                        await emit(MessageType.THINKING,
-                            f"{comp['competitor_name']} offers {product['name']} at ₹{comp['price']:,.0f} "
-                            f"(₹{abs(price_diff):,.0f} {'cheaper' if price_diff > 0 else 'more expensive'}). "
-                            f"Price match doesn't meet minimum margin of {product['min_margin_percent']*100:.0f}%."
-                        )
-                        analysis.recommendation = (
-                            f"Cannot match competitor price while maintaining minimum margin. "
-                            f"Recommend maintaining standard pricing with emphasis on quality and support."
-                        )
-                    else:
-                        await emit(MessageType.RESULT,
-                            f"Our price for {product['name']} (₹{unit_price:,.0f}) is competitive "
-                            f"vs {comp['competitor_name']} (₹{comp['price']:,.0f}). Maintaining standard pricing."
-                        )
-                        analysis.recommendation = "Price is competitive. Maintain standard pricing."
-
-                    competitor_analyses.append(analysis)
-                    analysis_details.append(
-                        f"{product['name']} vs {comp['competitor_name']}: "
-                        f"Our ₹{unit_price:,.0f} vs Their ₹{comp['price']:,.0f} — {analysis.recommendation}"
+                    
+                    # Select appropriate value-adds via Tool
+                    va_tool_resp = suggest_value_add_tool.invoke(product["category"])
+                    suggested_adds = []
+                    if not va_tool_resp.startswith("No "):
+                        try:
+                            suggested_adds = json.loads(va_tool_resp)
+                        except Exception:
+                            pass
+                            
+                    analysis.recommendation += " Adding value-add bundles to compensate."
+                    for va in suggested_adds:
+                        analysis.value_adds_suggested.append(va["name"])
+                        value_add_items.append(LineItem(
+                            item_name=va["name"],
+                            description=va["description"],
+                            quantity=1,
+                            unit_price=0.0,
+                            total_price=0.0,
+                            is_value_add=True
+                        ))
+                elif strategy_type == "BASELINE":
+                    await emit(MessageType.THINKING,
+                        f"No competitor data for '{product['name']}'. Using BASELINE pricing at target margin."
                     )
+                else:
+                    await emit(MessageType.THINKING, f"✅ MATCH strategy: Best competitor ₹{lowest_comp:,.0f}, our price ₹{final_price:,.0f}.")
+                    
+                competitor_analyses.append(analysis)
+                analysis_details.append(
+                    f"{product['name']} vs {analysis.competitor_name}: "
+                    f"Our ₹{unit_price:,.0f} vs Their ₹{lowest_comp:,.0f} — {analysis.recommendation}"
+                )
             else:
                 # No match - use estimated pricing
                 await emit(MessageType.THINKING,
@@ -313,20 +294,6 @@ class PricingStrategist:
 
         await emit(MessageType.COMPLETE, "Pricing analysis and competitive strategy complete.")
         return strategy
-
-    def _select_value_adds(self, category: str) -> list[dict]:
-        """Select appropriate value-adds based on product category."""
-        all_adds = self.value_adds_catalog.get("value_adds", [])
-        # Always include some universal value-adds
-        selected = []
-        for va in all_adds:
-            if va["category"] == category or va["category"] == "service":
-                selected.append(va)
-                if len(selected) >= 3:
-                    break
-        if not selected:
-            selected = all_adds[:2]
-        return selected
 
     def _parse_rationale(self, response: str) -> dict:
         """Parse LLM rationale response."""

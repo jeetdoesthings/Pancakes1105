@@ -14,6 +14,7 @@ from app.models import (
     AgentMessage, AgentRole, MessageType
 )
 from app.config import settings
+from app.tools.copywriter_tools import template_filler_tool
 
 
 PROPOSAL_PROMPT = PromptTemplate.from_template("""You are a "Senior Copywriter" — an expert proposal writer for an SME called "{company_name}".
@@ -28,7 +29,7 @@ PRICING STRATEGY & LINE ITEMS:
 
 COMPANY NAME: {company_name}
 
-Write professional proposal content for each section below. The tone should be confident, professional, and client-focused. Emphasize reliability, expertise, and the value-adds that differentiate us from competitors.
+Write professional proposal content for each section below. The tone should be confident, professional, and client-focused. Emphasize reliability, scalability expertise, and the value-adds that differentiate us from competitors.
 
 Return ONLY a valid JSON object with these sections:
 
@@ -56,6 +57,8 @@ Return ONLY a valid JSON object with these sections:
 IMPORTANT:
 - Be specific and reference actual products/items from the pricing data
 - Mention value-adds naturally as part of the proposal, not as a defensive move
+- For Company Profile, Support Plan, and Terms & Conditions, heavily base your content on the provided templates below:
+{templates_json}
 - Keep each section professional and concise
 - Return ONLY the JSON object, no other text""")
 
@@ -100,11 +103,19 @@ class SeniorCopywriter:
         # Build prompt
         requirements_json = json.dumps(requirements.model_dump(), indent=2, default=str)
         pricing_json = json.dumps(pricing.model_dump(), indent=2, default=str)
+        
+        # Use Tool to fetch deterministic templates
+        templates_data = {
+            "company_profile": template_filler_tool.invoke({"template_name": "company_profile", "structured_data": pricing_json}),
+            "terms_and_conditions": template_filler_tool.invoke({"template_name": "terms_and_conditions", "structured_data": pricing_json}),
+            "support_plan": template_filler_tool.invoke({"template_name": "support_plan", "structured_data": pricing_json})
+        }
 
         prompt_text = PROPOSAL_PROMPT.format(
             requirements_json=requirements_json,
             pricing_json=pricing_json,
             company_name=company_name,
+            templates_json=json.dumps(templates_data, indent=2)
         )
 
         if additional_instructions:

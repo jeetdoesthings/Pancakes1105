@@ -7,7 +7,7 @@ Restored as per user request to use the "Ignis Solutions" design.
 
 import os
 from typing import Dict, Any
-from jinja2 import Template
+from jinja2 import Template, Environment, FileSystemLoader
 from xhtml2pdf import pisa
 from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 from app.config import settings

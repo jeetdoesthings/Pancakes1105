@@ -28,6 +28,8 @@ from typing import Callable, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from langchain_core.prompts import PromptTemplate
+from langgraph.prebuilt import create_react_agent
+from app.tools.junior_tools import build_document_query_tool
 
 from app.models import (
     ExtractedRequirements, ScopeItem, AgentMessage,
@@ -55,9 +57,9 @@ TASK
 Parse the RFP document below and return a single JSON object.
 Before writing JSON, think step-by-step (inside a <think> block) about:
   1. What is the project and who issued it?
-  2. List every scope item with its quantity and category.
+  2. List every scope item with its quantity and category and its features.
   3. Is there an explicit budget figure? Convert Indian lakh notation to a plain integer.
-  4. What are the key deadlines, evaluation criteria, and submission rules?
+  4. What are the key deadlines, evaluation criteria, submission rules and minumum requirements?
 
 Then output ONLY the JSON (no markdown fences, no extra text).
 
@@ -107,7 +109,8 @@ class JuniorAnalyst:
     """Parses unstructured RFP text and extracts structured requirements."""
 
     def __init__(self):
-        self.llm = self._build_llm()
+        self.chat_llm = self._build_chat_llm()
+        self.json_llm = self._build_json_llm()
         self.role = AgentRole.JUNIOR_ANALYST
 
     # ------------------------------------------------------------------
@@ -115,37 +118,55 @@ class JuniorAnalyst:
     # ------------------------------------------------------------------
     async def analyze(
         self,
-        rfp_text: str,
+        job_id: str,
         emit_message: Optional[Callable] = None,
         additional_instructions: str = "",
     ) -> tuple[ExtractedRequirements, dict]:
-        """Parse RFP text and return (ExtractedRequirements, raw_dict).
+        """Parse RFP using Hierarchical RAG tool and return structured requirements."""
 
-        The raw_dict is returned so the orchestrator can surface the data
-        as an editable JSON payload for the human-in-the-loop approval UI
-        before passing structured requirements to downstream agents.
-        """
-        # 1. Validate input
-        rfp_text = self._sanitise(rfp_text)
 
-        await self._emit(emit_message, MessageType.STATUS, "Starting RFP document analysis...")
+        await self._emit(emit_message, MessageType.STATUS, "Starting Hierarchical RAG document analysis...")
         await self._emit(emit_message, MessageType.THINKING,
-                         "Scanning for key sections: scope of work, budget, timeline, evaluation criteria...")
+                         "Equipping tools to query the Vector Storage for specific sections...")
 
-        # 2. Build prompt
+        # 2. Tool calling loop with ReAct agent
+        doc_tool = build_document_query_tool(job_id)
+        agent_executor = create_react_agent(self.chat_llm, [doc_tool])
+        
+        exploration_prompt = f"""You are the Junior Analyst. The actual text is too large to read at once. Use your document_query_tool to search the document and find the following facts systematically:
+1. Project name and issuing company.
+2. Full list of scope items, their quantities, and descriptions/specifications.
+3. Explicit budget figure and currency if mentioned.
+4. Key deadlines and evaluation criteria.
+5. Project timeline and submission requirements.
+
+Additional Instructions: {additional_instructions}
+
+Gather all the facts by querying the document multiple times. Finally, output a comprehensive summary of all these points."""
+
+        await self._emit(emit_message, MessageType.ACTION,
+                         "Executing multi-step queries against the RFP Knowledge Base...")
+        try:
+            response = await agent_executor.ainvoke({"messages": [("user", exploration_prompt)]})
+            rag_summary = response["messages"][-1].content
+        except Exception as e:
+            logger.warning(f"ReAct agent failed, falling back to manual: {e}")
+            rag_summary = "Exploration failed. No data fetched."
+
+        await self._emit(emit_message, MessageType.THINKING,
+                         "RAG exploration complete. Extracting final structured JSON...")
+
+        # 3. Build extraction prompt
         instructions_block = (
             f"\nADDITIONAL INSTRUCTIONS FROM USER:\n{additional_instructions}"
             if additional_instructions else ""
         )
         prompt_text = EXTRACTION_PROMPT.format(
-            rfp_text=rfp_text,
+            rfp_text=f"RAG EXPLORATION SUMMARY:\n{rag_summary}",
             additional_instructions=instructions_block,
         )
 
-        await self._emit(emit_message, MessageType.ACTION,
-                         "Calling LLM to extract structured requirements from RFP...")
-
-        # 3. Call LLM with retry
+        # 4. Call JSON LLM with retry
         raw_response = await self._call_llm_with_retry(prompt_text, emit_message)
 
         await self._emit(emit_message, MessageType.THINKING,
@@ -186,20 +207,19 @@ class JuniorAnalyst:
     # LLM construction
     # ------------------------------------------------------------------
     @staticmethod
-    def _build_llm():
-        """Return Gemini if GOOGLE_API_KEY is set, otherwise fall back to OpenAI."""
-        try:
-            if getattr(settings, "GOOGLE_API_KEY", None):
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                return ChatGoogleGenerativeAI(
-                    google_api_key=settings.GOOGLE_API_KEY,
-                    model="gemini-1.5-flash",   # free-tier model per blueprint
-                    temperature=0.1,
-                    max_output_tokens=4096,
-                )
-        except ImportError:
-            logger.warning("langchain-google-genai not installed; falling back to OpenAI.")
+    def _build_chat_llm():
+        """Standard chat LLM capable of function calling."""
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            model=settings.LLM_MODEL_NAME,
+            temperature=0.1,
+            max_tokens=4096,
+        )
 
+    @staticmethod
+    def _build_json_llm():
+        """LLM constrained to JSON object response format."""
         from langchain_openai import ChatOpenAI
         return ChatOpenAI(
             api_key=settings.OPENAI_API_KEY,
@@ -223,7 +243,7 @@ class JuniorAnalyst:
         while attempt < MAX_RETRIES:
             attempt += 1
             try:
-                response_msg = await self.llm.ainvoke(prompt_text)
+                response_msg = await self.json_llm.ainvoke(prompt_text)
                 return str(response_msg.content) if hasattr(response_msg, "content") else str(response_msg)
             except Exception as exc:
                 last_exc = exc

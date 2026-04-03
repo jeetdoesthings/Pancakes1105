@@ -23,6 +23,8 @@ from app.agents.junior_analyst import JuniorAnalyst
 from app.agents.pricing_strategist import PricingStrategist
 from app.agents.senior_copywriter import SeniorCopywriter
 from app.services.pdf_generator import PDFGenerator
+from app.services.rag_service import rag_service
+from app.compliance_engine import validate_proposal_compliance
 
 
 class Orchestrator:
@@ -89,6 +91,10 @@ class Orchestrator:
             revision_count=0
         )
         self.graph.update_state(config, initial_state)
+        
+        # Populate the Vector Store with the RFP Document chunks
+        rag_service.process_and_store(job_id, rfp_input.rfp_text)
+        
         return job_id
 
     def get_job(self, job_id: str) -> Optional[JobState]:
@@ -201,8 +207,8 @@ class Orchestrator:
                     content=f"Re-running Junior Analyst with changes: {instructions}"
                 ))
 
-        reqs, _ = await self.junior_analyst.analyze(
-            rfp_text=state["rfp_input"].rfp_text,
+        requirements, _ = await self.junior_analyst.analyze(
+            job_id=state["job_id"],
             emit_message=emit,
             additional_instructions=instructions
         )
@@ -313,6 +319,50 @@ class Orchestrator:
     async def _node_pdf_generator(self, state: GraphState, config: RunnableConfig):
         emit = config["configurable"].get("emit")
 
+        # ── Compliance Validation (Section 10 of design doc) ──
+        await emit(AgentMessage(
+            agent=AgentRole.ORCHESTRATOR,
+            message_type=MessageType.STATUS,
+            content="🔍 Running compliance validation before PDF generation..."
+        ))
+
+        try:
+            compliance_report = validate_proposal_compliance(
+                requirements=state["extracted_requirements"],
+                pricing=state["pricing_strategy"],
+                proposal=state["proposal_draft"],
+            )
+
+            for risk in compliance_report.get("risks", []):
+                await emit(AgentMessage(
+                    agent=AgentRole.ORCHESTRATOR,
+                    message_type=MessageType.ERROR,
+                    content=f"⚠️ COMPLIANCE RISK: {risk}"
+                ))
+            for warning in compliance_report.get("warnings", []):
+                await emit(AgentMessage(
+                    agent=AgentRole.ORCHESTRATOR,
+                    message_type=MessageType.THINKING,
+                    content=f"⚡ COMPLIANCE WARNING: {warning}"
+                ))
+
+            checks = compliance_report.get("checks_performed", 0)
+            clauses = compliance_report.get("compliance_clauses_found", 0)
+            status = "PASSED" if compliance_report.get("passed") else "RISKS DETECTED"
+            await emit(AgentMessage(
+                agent=AgentRole.ORCHESTRATOR,
+                message_type=MessageType.RESULT,
+                content=f"Compliance check complete: {checks} checks performed, "
+                        f"{clauses} mandatory clauses identified. Status: {status}"
+            ))
+        except Exception as e:
+            await emit(AgentMessage(
+                agent=AgentRole.ORCHESTRATOR,
+                message_type=MessageType.THINKING,
+                content=f"Compliance validation skipped: {str(e)}"
+            ))
+
+        # ── PDF Generation ──
         await emit(AgentMessage(
             agent=AgentRole.PDF_GENERATOR,
             message_type=MessageType.STATUS,

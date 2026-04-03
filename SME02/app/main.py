@@ -320,10 +320,17 @@ async def download_pdf(job_id: str):
     if not os.path.exists(job.pdf_path):
         raise HTTPException(status_code=404, detail="PDF file not found")
 
+    headers = {
+        "Content-Disposition": f'attachment; filename="SME02_Quotation_{job_id}.pdf"',
+        "Access-Control-Expose-Headers": "Content-Disposition",
+        "Cache-Control": "no-cache"
+    }
+
     return FileResponse(
         job.pdf_path,
         media_type="application/pdf",
         filename=f"SME02_Quotation_{job_id}.pdf",
+        headers=headers
     )
 
 

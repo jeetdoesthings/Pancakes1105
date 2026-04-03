@@ -23,3 +23,10 @@ PyMuPDF>=1.24.0
 python-docx==1.1.0
 markdown==3.10.2
 pydyf==0.11.0
+xhtml2pdf==0.2.17
+
+# Vector RAG Upgrade
+chromadb==0.5.5
+langchain-chroma==0.1.4
+tiktoken==0.7.0
+pypdf==5.1.0

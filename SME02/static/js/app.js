@@ -343,13 +343,45 @@ function onProcessingComplete() {
     populateReview();
 }
 
-function onPdfReady() {
+async function onPdfReady() {
     setGlobalStatus('success', 'PDF Ready');
 
     // Show download section
     showSection('downloadSection');
-    els.downloadPdfBtn.href = `/api/download-pdf/${state.jobId}`;
-    els.downloadPdfBtn.download = `SME02_Quotation_${state.jobId}.pdf`;
+    
+    // We use .pdf in the URL to help the browser recognize the type
+    const downloadUrl = `/api/download-pdf/${state.jobId}.pdf`;
+    const filename = `SME02_Quotation_${state.jobId}.pdf`;
+
+    // Modern Blob approach to force filename extension across all browsers
+    try {
+        els.downloadPdfBtn.innerHTML = '<span class="status-dot"></span> Preparing Download...';
+        const response = await fetch(downloadUrl);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        els.downloadPdfBtn.href = blobUrl;
+        els.downloadPdfBtn.setAttribute('download', filename);
+        
+        // Clean up the URL object after clicking
+        els.downloadPdfBtn.onclick = () => {
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+        };
+        
+        els.downloadPdfBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download PDF Quotation
+        `;
+    } catch (e) {
+        console.error('Blob preparation failed, falling back to direct link', e);
+        els.downloadPdfBtn.href = downloadUrl;
+        els.downloadPdfBtn.setAttribute('download', filename);
+    }
+    
     els.downloadMeta.textContent = `Proposal ${state.jobId.toUpperCase()} — Generated ${new Date().toLocaleString()}`;
 }
 
