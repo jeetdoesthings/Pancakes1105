@@ -8,10 +8,10 @@ sse-starlette==2.1.0
 python-multipart==0.0.9
 
 # AI / LLM
-langchain==0.3.0
-langchain-community==0.3.0
-langchain-core==0.3.0
-langchain-openai==0.3.35
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.3.0
 
 # PDF Generation
 weasyprint==62.3

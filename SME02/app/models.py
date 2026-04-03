@@ -157,3 +157,18 @@ class JobState(BaseModel):
     pdf_path: Optional[str] = None
     messages: list[AgentMessage] = []
     revision_count: int = 0
+
+
+from typing import TypedDict
+
+class GraphState(TypedDict, total=False):
+    job_id: str
+    status: JobStatus
+    rfp_input: RFPInput
+    extracted_requirements: ExtractedRequirements
+    pricing_strategy: PricingStrategy
+    proposal_draft: ProposalDraft
+    feedback: HumanFeedback
+    pdf_path: str
+    messages: list[AgentMessage]
+    revision_count: int
