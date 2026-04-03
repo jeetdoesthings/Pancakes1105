@@ -206,7 +206,7 @@ class Orchestrator:
             emit_message=emit,
             additional_instructions=instructions
         )
-        return {"extracted_requirements": reqs, "status": JobStatus.ANALYZING}
+        return {"extracted_requirements": requirements, "status": JobStatus.ANALYZING}
 
     async def _node_pricing_strategist(self, state: GraphState, config: RunnableConfig):
         emit = config["configurable"].get("emit")
