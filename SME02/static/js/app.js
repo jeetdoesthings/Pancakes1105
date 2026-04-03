@@ -2,7 +2,7 @@
  * SME02 — Frontend Application
  * ==============================
  * Handles SSE streaming, agent feed rendering, review/approval flow,
- * and PDF download.
+ * PDF download, New RFP reset, and job history.
  */
 
 // ---- State ----
@@ -13,6 +13,7 @@ const state = {
     jobData: null, // stores requirements, pricing, proposal
     uploadFile: null, // stores explicitly dropped/selected file
     inputMode: 'upload', // 'upload' or 'paste'
+    history: [], // local history of processed jobs
 };
 
 // ---- DOM Elements ----
@@ -56,6 +57,14 @@ const els = {
     fileName: $('#fileName'),
     fileSize: $('#fileSize'),
     removeFileBtn: $('#removeFileBtn'),
+
+    // New RFP & History
+    newRfpBtn: $('#newRfpBtn'),
+    newRfpHeaderBtn: $('#newRfpHeaderBtn'),
+    historyBtn: $('#historyBtn'),
+    historyModal: $('#historyModal'),
+    closeHistoryBtn: $('#closeHistoryBtn'),
+    historyList: $('#historyList'),
 };
 
 // ---- Example RFP ----
@@ -106,6 +115,9 @@ Proposals must include:
 
 // ---- Initialization ----
 document.addEventListener('DOMContentLoaded', () => {
+    // Load history from localStorage
+    loadHistory();
+
     // Character counter
     els.rfpInput.addEventListener('input', () => {
         els.charCount.textContent = `${els.rfpInput.value.length} characters`;
@@ -178,6 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
         els.fileInput.value = '';
         els.selectedFile.classList.add('hidden');
         els.dropZone.style.display = 'block';
+    });
+
+    // ---- New RFP Buttons ----
+    els.newRfpBtn.addEventListener('click', startNewRfp);
+    els.newRfpHeaderBtn.addEventListener('click', startNewRfp);
+
+    // ---- History ----
+    els.historyBtn.addEventListener('click', openHistory);
+    els.closeHistoryBtn.addEventListener('click', closeHistory);
+    els.historyModal.addEventListener('click', (e) => {
+        // Close when clicking the overlay backdrop
+        if (e.target === els.historyModal) closeHistory();
     });
 });
 
@@ -276,6 +300,16 @@ async function startProcessing() {
         
         state.jobId = data.job_id;
 
+        // Add to history immediately as "processing"
+        addToHistory({
+            job_id: state.jobId,
+            status: 'processing',
+            company_name: els.companyName.value || 'Ering Solutions',
+            created_at: new Date().toISOString(),
+            project_name: '',
+            pdf_ready: false,
+        });
+
         // Start SSE streaming
         streamAgentFeed(`/api/stream/${state.jobId}`);
 
@@ -311,6 +345,7 @@ function streamAgentFeed(url) {
                 } else if (msg.job_status === 'error') {
                     eventSource.close();
                     setGlobalStatus('error', 'Error');
+                    updateHistoryStatus(state.jobId, 'error');
                 }
                 return;
             }
@@ -338,6 +373,15 @@ function onProcessingComplete() {
     els.processBtn.disabled = false;
     els.processBtn.innerHTML = '⚡ Process RFP with AI Agents';
 
+    // Update history with project name if available
+    if (state.jobData && state.jobData.extracted_requirements) {
+        const projectName = state.jobData.extracted_requirements.project_name || '';
+        updateHistoryMeta(state.jobId, {
+            status: 'awaiting_approval',
+            project_name: projectName,
+        });
+    }
+
     // Show review section
     showSection('reviewSection');
     populateReview();
@@ -346,11 +390,26 @@ function onProcessingComplete() {
 async function onPdfReady() {
     setGlobalStatus('success', 'PDF Ready');
 
+    // --- FIX: Reset the approve button spinner ---
+    els.approveBtn.disabled = false;
+    els.approveBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Approve &amp; Generate PDF
+    `;
+
     // Show download section
     showSection('downloadSection');
     
     const downloadUrl = `/api/download-pdf/${state.jobId}`;
     const filename = `SME02_Quotation_${state.jobId}.pdf`;
+
+    // Update history
+    updateHistoryMeta(state.jobId, {
+        status: 'completed',
+        pdf_ready: true,
+    });
 
     // Modern Blob approach to force filename extension across all browsers
     try {
@@ -703,6 +762,245 @@ async function submitChanges() {
         </svg>
         Submit Changes & Re-run Agents
     `;
+}
+
+// ==================================================
+// ---- NEW RFP (Reset) ----
+// ==================================================
+function startNewRfp() {
+    // Confirm if user is in the middle of something
+    if (state.status === 'processing') {
+        if (!confirm('An RFP is currently being processed. Start a new one anyway?')) return;
+    }
+
+    // Reset state
+    state.jobId = null;
+    state.status = 'idle';
+    state.changes = [];
+    state.jobData = null;
+    state.uploadFile = null;
+    state.inputMode = 'upload';
+
+    // Reset global status
+    setGlobalStatus('', 'Ready');
+
+    // Reset input fields
+    els.rfpInput.value = '';
+    els.charCount.textContent = '0 characters';
+    els.companyName.value = 'Ering Solutions';
+    els.contactName.value = 'Sales Team';
+    els.contactEmail.value = 'sales@eringsolutions.com';
+
+    // Reset file upload
+    els.fileInput.value = '';
+    els.selectedFile.classList.add('hidden');
+    els.dropZone.style.display = 'block';
+
+    // Reset input mode to upload
+    setInputMode('upload');
+
+    // Reset process button
+    els.processBtn.disabled = false;
+    els.processBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Process RFP with AI Agents
+    `;
+
+    // Reset approve button
+    els.approveBtn.disabled = false;
+    els.approveBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Approve &amp; Generate PDF
+    `;
+
+    // Reset submit changes button
+    els.submitChangesBtn.style.display = 'none';
+    els.submitChangesBtn.disabled = false;
+
+    // Reset changes list
+    els.changesList.innerHTML = '';
+
+    // Clear review tabs
+    $('#tab-requirements').innerHTML = '';
+    $('#tab-pricing').innerHTML = '';
+    $('#tab-proposal').innerHTML = '';
+
+    // Reset agent chips
+    resetAgentChips();
+
+    // Clear feed
+    clearFeed();
+    els.feedContainer.innerHTML = `
+        <div class="feed-empty">
+            <div class="feed-empty-icon">🤖</div>
+            <p>Agent reasoning will appear here in real-time...</p>
+        </div>
+    `;
+
+    // Reset download button
+    els.downloadPdfBtn.href = '#';
+    els.downloadPdfBtn.removeAttribute('download');
+    els.downloadPdfBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF Quotation
+    `;
+    els.downloadMeta.textContent = 'Generated with AI-powered analysis';
+
+    // Hide all sections except hero and input
+    els.agentSection.classList.add('hidden');
+    els.reviewSection.classList.add('hidden');
+    els.downloadSection.classList.add('hidden');
+    els.heroSection.style.display = '';
+    els.inputSection.style.display = '';
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==================================================
+// ---- HISTORY ----
+// ==================================================
+
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem('sme02_history');
+        if (saved) {
+            state.history = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('Could not load history:', e);
+        state.history = [];
+    }
+}
+
+function saveHistory() {
+    try {
+        // Keep only last 50 entries
+        if (state.history.length > 50) {
+            state.history = state.history.slice(0, 50);
+        }
+        localStorage.setItem('sme02_history', JSON.stringify(state.history));
+    } catch (e) {
+        console.warn('Could not save history:', e);
+    }
+}
+
+function addToHistory(entry) {
+    // Check if already exists (by job_id)
+    const existing = state.history.findIndex(h => h.job_id === entry.job_id);
+    if (existing >= 0) {
+        state.history[existing] = { ...state.history[existing], ...entry };
+    } else {
+        state.history.unshift(entry); // newest first
+    }
+    saveHistory();
+}
+
+function updateHistoryStatus(jobId, status) {
+    const entry = state.history.find(h => h.job_id === jobId);
+    if (entry) {
+        entry.status = status;
+        saveHistory();
+    }
+}
+
+function updateHistoryMeta(jobId, meta) {
+    const entry = state.history.find(h => h.job_id === jobId);
+    if (entry) {
+        Object.assign(entry, meta);
+        saveHistory();
+    }
+}
+
+function openHistory() {
+    renderHistoryList();
+    els.historyModal.classList.remove('hidden');
+}
+
+function closeHistory() {
+    els.historyModal.classList.add('hidden');
+}
+
+function getStatusIcon(status) {
+    const map = {
+        'completed': '✅',
+        'error': '❌',
+        'processing': '⚙️',
+        'analyzing': '🔍',
+        'pricing': '📊',
+        'drafting': '✍️',
+        'awaiting_approval': '⏳',
+        'revising': '🔄',
+        'generating_pdf': '📄',
+        'pending': '🕐',
+    };
+    return map[status] || '📋';
+}
+
+function getStatusCategory(status) {
+    if (status === 'completed') return 'completed';
+    if (status === 'error') return 'error';
+    if (status === 'pending') return 'pending';
+    return 'processing';
+}
+
+function renderHistoryList() {
+    if (state.history.length === 0) {
+        els.historyList.innerHTML = `
+            <div class="history-empty">
+                <div class="history-empty-icon">📋</div>
+                <p>No previous RFPs yet. Process your first RFP to see it here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    els.historyList.innerHTML = state.history.map(entry => {
+        const title = entry.project_name || `RFP Job ${entry.job_id.toUpperCase()}`;
+        const time = entry.created_at ? new Date(entry.created_at).toLocaleString() : 'Unknown';
+        const statusCat = getStatusCategory(entry.status);
+        const statusIcon = getStatusIcon(entry.status);
+        const statusLabel = (entry.status || 'unknown').replace(/_/g, ' ');
+
+        let actionsHtml = '';
+        if (entry.pdf_ready && entry.status === 'completed') {
+            actionsHtml = `
+                <div class="history-item-actions">
+                    <a class="history-download-btn" href="/api/download-pdf/${entry.job_id}" download="SME02_Quotation_${entry.job_id}.pdf" title="Download PDF" onclick="event.stopPropagation()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </a>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="history-item" data-job-id="${entry.job_id}">
+                <div class="history-item-icon ${statusCat}">${statusIcon}</div>
+                <div class="history-item-body">
+                    <div class="history-item-title">${escapeHtml(title)}</div>
+                    <div class="history-item-meta">
+                        <span>${entry.job_id.toUpperCase()}</span>
+                        <span>•</span>
+                        <span>${time}</span>
+                    </div>
+                </div>
+                <span class="history-item-status ${entry.status}">${statusLabel}</span>
+                ${actionsHtml}
+            </div>
+        `;
+    }).join('');
 }
 
 // ---- Helpers ----

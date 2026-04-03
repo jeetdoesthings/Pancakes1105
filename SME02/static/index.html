@@ -33,7 +33,21 @@
                 </div>
                 <span class="logo-text">SME<span class="logo-accent">02</span></span>
             </div>
-            <nav class="nav-status">
+            <nav class="nav-actions">
+                <button class="header-btn" id="newRfpHeaderBtn" title="Start New RFP">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    New RFP
+                </button>
+                <button class="header-btn" id="historyBtn" title="View History">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    History
+                </button>
                 <span class="status-badge" id="globalStatus">
                     <span class="status-dot"></span>
                     Ready
@@ -280,6 +294,13 @@ Example:
                     </svg>
                     Download PDF Quotation
                 </a>
+                <button class="btn-new-rfp" id="newRfpBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Start New RFP
+                </button>
             </div>
         </section>
 
@@ -290,6 +311,28 @@ Example:
         <p>SME02 — Autonomous RFP Response & Competitive Quotation Orchestrator</p>
         <p class="footer-sub">Built with FastAPI, LangChain, Ollama, and WeasyPrint</p>
     </footer>
+
+    <!-- ===== History Modal ===== -->
+    <div class="modal-overlay hidden" id="historyModal">
+        <div class="modal-panel glass-card">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    RFP History
+                </h2>
+                <button class="modal-close" id="closeHistoryBtn">&times;</button>
+            </div>
+            <div class="modal-body" id="historyList">
+                <div class="history-empty">
+                    <div class="history-empty-icon">📋</div>
+                    <p>No previous RFPs yet. Process your first RFP to see it here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/js/app.js"></script>
 </body>

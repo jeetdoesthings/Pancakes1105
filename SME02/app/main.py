@@ -352,6 +352,26 @@ async def get_job_status(job_id: str):
     }
 
 
+@app.get("/api/jobs")
+async def list_jobs():
+    """List all known job IDs with basic status information."""
+    jobs = []
+    for job_id in orchestrator.job_messages.keys():
+        job = orchestrator.get_job(job_id)
+        if job:
+            project_name = ""
+            if job.extracted_requirements:
+                project_name = job.extracted_requirements.project_name or ""
+            jobs.append({
+                "job_id": job.job_id,
+                "status": job.status.value,
+                "project_name": project_name,
+                "pdf_ready": job.pdf_path is not None,
+                "revision_count": job.revision_count,
+            })
+    return {"jobs": jobs}
+
+
 # ---- Health Check ----
 
 @app.get("/api/health")

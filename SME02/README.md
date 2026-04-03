@@ -3,7 +3,7 @@
 An AI-powered multi-agent system that automates the Request for Proposal (RFP) response process for Small and Medium Enterprises (SMEs), enabling them to generate professional, strategically priced quotations in minutes rather than days.
 
 ## 🚀 Key Upgrades (v2.0)
-- **Zero-Dependency PDF Engine**: Migrated from WeasyPrint to **ReportLab Platypus**, eliminating complex system-level dependencies (Pango/Cairo) and ensuring boardroom-ready, high-fidelity PDF output on any OS.
+- **Dependency-Light PDF Engine**: Migrated from WeasyPrint to **xhtml2pdf + Jinja2 templates**, avoiding system-level Pango/Cairo setup and improving cross-platform reliability.
 - **OpenAI-Powered Intelligence**: Transitioned from local Ollama to **OpenAI (GPT-4o-mini)** for superior reasoning, extraction, and strategic copywriting.
 - **Windows Stability**: Hardened UTF-8 encoding across the streaming backend to support global currency symbols (₹, $, €) without crashes.
 
@@ -17,7 +17,7 @@ The system uses a sequential DAG (Directed Acyclic Graph) powered by **LangGraph
 - **Backend**: FastAPI (Python 3.10+)
 - **Orchestration**: LangChain & LangGraph
 - **LLM**: OpenAI (GPT-4o-mini) / DeepSeek
-- **PDF Generation**: ReportLab (Programmatic Layout)
+- **PDF Generation**: xhtml2pdf + Jinja2 (Template-Driven Layout)
 - **Frontend**: Glassmorphic Vanilla Web Components (HTML/CSS/JS)
 
 ## 📦 Setup & Installation
@@ -50,10 +50,12 @@ SME02/
 │   ├── main.py              # FastAPI Entry Point (UTF-8 Hardened)
 │   ├── agents/              # Specialist AI Agents
 │   ├── services/
-│   │   ├── pdf_generator.py # ReportLab Boardroom-Ready Engine
+│   │   ├── pdf_generator.py # xhtml2pdf Quotation Engine
 │   │   └── orchestrator.py  # LangGraph Orchestration Logic
 │   └── models.py            # Pydantic Core Models
 ├── data/                    # Mock Pricing & Competitor Data
+├── output/                  # Runtime-generated quotation PDFs
+├── scripts/                 # Utility scripts (e.g., PDF smoke generation)
 ├── static/                  # Glassmorphic Frontend
 ├── requirements.txt         # Optimized Dependency List
 └── README.md                # Documentation
