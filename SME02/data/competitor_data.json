@@ -1,0 +1,91 @@
+{
+  "competitors": [
+    {
+      "name": "Competitor X (TechVista Solutions)",
+      "offerings": [
+        {
+          "product_id": "SERVER_R760",
+          "price": 530000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "CISCO_9300",
+          "price": 145000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "CISCO_9200",
+          "price": 48000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "VMWARE_VSPHERE",
+          "price": 79000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "INSTALLATION_CONFIG",
+          "price": 140000,
+          "currency": "INR",
+          "value_adds": []
+        }
+      ]
+    },
+    {
+      "name": "Competitor Y (DataFlow Systems)",
+      "offerings": [
+        {
+          "product_id": "SERVER_R760",
+          "price": 440000,
+          "currency": "INR",
+          "value_adds": ["Basic 6-month support"]
+        },
+        {
+          "product_id": "CISCO_9300",
+          "price": 115000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "VMWARE_VSPHERE",
+          "price": 60000,
+          "currency": "INR",
+          "value_adds": []
+        },
+        {
+          "product_id": "DATA_MIGRATION",
+          "price": 170000,
+          "currency": "INR",
+          "value_adds": []
+        }
+      ]
+    },
+    {
+      "name": "Competitor Z (InfraPrime Corp)",
+      "offerings": [
+        {
+          "product_id": "SERVER_R760",
+          "price": 545000,
+          "currency": "INR",
+          "value_adds": ["1-year basic support", "Free rack mounting"]
+        },
+        {
+          "product_id": "CISCO_9300",
+          "price": 155000,
+          "currency": "INR",
+          "value_adds": ["Free cabling"]
+        },
+        {
+          "product_id": "TRAINING_2DAY",
+          "price": 70000,
+          "currency": "INR",
+          "value_adds": ["Online follow-up session"]
+        }
+      ]
+    }
+  ]
+}

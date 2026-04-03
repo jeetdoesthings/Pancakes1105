@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Proposal — {{ proposal_id }}</title>
+    <style>
+        /* ===== PDF Quotation Stylesheet ===== */
+        @page {
+            size: A4;
+            margin: 20mm 18mm 25mm 18mm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9px;
+                color: #888;
+                font-family: 'Helvetica Neue', Arial, sans-serif;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #1a1a2e;
+        }
+
+        /* ---- Cover Page ---- */
+        .cover-page {
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 250mm;
+            text-align: center;
+        }
+        .cover-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4f6ef7, #00d4ff);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+        }
+        .cover-logo-text {
+            color: white;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .cover-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .cover-subtitle {
+            font-size: 16px;
+            color: #4f6ef7;
+            margin-bottom: 40px;
+            font-weight: 500;
+        }
+        .cover-meta {
+            font-size: 12px;
+            color: #555;
+            line-height: 2;
+        }
+        .cover-meta strong { color: #1a1a2e; }
+        .cover-divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #4f6ef7, #00d4ff);
+            margin: 25px auto;
+            border-radius: 2px;
+        }
+
+        /* ---- Section Headings ---- */
+        h1 {
+            font-size: 20px;
+            color: #1a1a2e;
+            border-bottom: 3px solid #4f6ef7;
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+            margin-top: 30px;
+        }
+        h2 {
+            font-size: 15px;
+            color: #4f6ef7;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        h3 {
+            font-size: 13px;
+            color: #333;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        /* ---- Content ---- */
+        p {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        li { margin-bottom: 4px; }
+
+        /* ---- Tables ---- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 10.5px;
+        }
+        th {
+            background: #4f6ef7;
+            color: white;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:nth-child(even) { background: #f8f9ff; }
+        .total-row {
+            background: #1a1a2e !important;
+            color: white;
+            font-weight: 700;
+        }
+        .total-row td { border-bottom: none; }
+        .subtotal-row {
+            font-weight: 600;
+            background: #eef1ff !important;
+        }
+        .text-right { text-align: right; }
+
+        /* ---- Value-Add Badge ---- */
+        .value-add-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 6px;
+        }
+
+        /* ---- Highlight Box ---- */
+        .highlight-box {
+            background: linear-gradient(135deg, #f0f4ff, #e8edff);
+            border-left: 4px solid #4f6ef7;
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .highlight-box p { margin-bottom: 4px; }
+
+        .strategy-box {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border-left: 4px solid #10b981;
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* ---- Agent Reasoning (optional in PDF) ---- */
+        .agent-reasoning {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 14px;
+            margin: 14px 0;
+            font-size: 10px;
+        }
+        .agent-reasoning h3 {
+            color: #6366f1;
+            font-size: 11px;
+            margin-top: 0;
+        }
+        .agent-item {
+            margin-bottom: 6px;
+            padding-left: 10px;
+            border-left: 2px solid #c7d2fe;
+        }
+        .agent-name {
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        /* ---- Footer ---- */
+        .contact-section {
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+
+<!-- ========== COVER PAGE ========== -->
+<div class="cover-page">
+    <div class="cover-logo">
+        <span class="cover-logo-text">E</span>
+    </div>
+    <div class="cover-title">{{ company_name }}</div>
+    <div class="cover-subtitle">Proposed Solution & Quotation</div>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+        <strong>Project:</strong> {{ requirements.project_name }}<br>
+        <strong>Prepared for:</strong> {{ requirements.issuing_company }}<br>
+        <strong>Proposal ID:</strong> {{ proposal_id }}<br>
+        <strong>Date:</strong> {{ date }}<br>
+        <strong>Prepared by:</strong> {{ contact_name }}<br>
+    </div>
+</div>
+
+<!-- ========== EXECUTIVE SUMMARY ========== -->
+<h1>Executive Summary</h1>
+<p>{{ proposal.executive_summary }}</p>
+
+<!-- ========== TECHNICAL PROPOSAL ========== -->
+<h1>Technical Proposal</h1>
+{% for section in proposal.technical_proposal %}
+<h2>{{ section.title }}</h2>
+<p>{{ section.content }}</p>
+{% endfor %}
+
+<!-- ========== PROJECT PLAN ========== -->
+<h1>Project Plan & Timeline</h1>
+<p>{{ proposal.project_plan }}</p>
+
+<!-- ========== PRICING BREAKDOWN ========== -->
+<div class="page-break"></div>
+<h1>Detailed Cost Breakdown</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width:40%">Item</th>
+            <th style="width:15%">Qty</th>
+            <th style="width:20%" class="text-right">Unit Price ({{ currency }})</th>
+            <th style="width:25%" class="text-right">Total ({{ currency }})</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in pricing.line_items %}
+        <tr>
+            <td>{{ item.item_name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td class="text-right">{{ item.unit_price | format_currency(currency) }}</td>
+            <td class="text-right">{{ item.total_price | format_currency(currency) }}</td>
+        </tr>
+        {% endfor %}
+
+        {% if has_value_adds %}
+        {% for va in pricing.value_adds %}
+        <tr style="background: #ecfdf5;">
+            <td>{{ va.item_name }} <span class="value-add-badge">Free Value-Add</span></td>
+            <td>{{ va.quantity }}</td>
+            <td class="text-right">{{ "INCLUDED" }}</td>
+            <td class="text-right">{{ "INCLUDED" }}</td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+
+        <tr class="subtotal-row">
+            <td colspan="3">Subtotal</td>
+            <td class="text-right">{{ pricing.subtotal | format_currency(currency) }}</td>
+        </tr>
+        <tr class="subtotal-row">
+            <td colspan="3">GST ({{ (pricing.tax_rate * 100) | int }}%)</td>
+            <td class="text-right">{{ pricing.tax_amount | format_currency(currency) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="3"><strong>Total Proposed Cost</strong></td>
+            <td class="text-right"><strong>{{ pricing.total | format_currency(currency) }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ========== VALUE PROPOSITION ========== -->
+<h1>Value Proposition & Strategic Rationale</h1>
+<p>{{ proposal.value_proposition }}</p>
+
+{% if pricing.pricing_rationale %}
+<div class="strategy-box">
+    <h3>Strategic Pricing Rationale</h3>
+    <p>{{ pricing.pricing_rationale }}</p>
+</div>
+{% endif %}
+
+<!-- ========== AGENT REASONING (Transparency) ========== -->
+{% if pricing.competitor_analyses %}
+<div class="agent-reasoning">
+    <h3>AI Agent Reasoning Summary</h3>
+    <div class="agent-item">
+        <span class="agent-name">Junior Analyst:</span>
+        Successfully extracted {{ requirements.scope_items | length }} scope items from the RFP document
+        for project "{{ requirements.project_name }}" issued by {{ requirements.issuing_company }}.
+    </div>
+    <div class="agent-item">
+        <span class="agent-name">Pricing Strategist:</span>
+        {{ pricing.strategy_summary }}
+    </div>
+    {% for analysis in pricing.competitor_analyses[:3] %}
+    <div class="agent-item">
+        <span class="agent-name">Competitive Analysis:</span>
+        {{ analysis.competitor_name }} — {{ analysis.recommendation }}
+    </div>
+    {% endfor %}
+    <div class="agent-item">
+        <span class="agent-name">Senior Copywriter:</span>
+        Drafted complete proposal with {{ proposal.technical_proposal | length }} technical sections,
+        executive summary, value proposition, and support plan.
+    </div>
+</div>
+{% endif %}
+
+<!-- ========== COMPANY PROFILE ========== -->
+<div class="page-break"></div>
+<h1>Company Profile & References</h1>
+<p>{{ proposal.company_profile }}</p>
+
+<!-- ========== SUPPORT PLAN ========== -->
+<h1>Proposed Support & Maintenance Plan</h1>
+<p>{{ proposal.support_plan }}</p>
+
+<!-- ========== TERMS ========== -->
+<h1>Terms & Conditions</h1>
+<p>{{ proposal.terms_and_conditions }}</p>
+
+<!-- ========== CONTACT ========== -->
+<div class="contact-section">
+    <h2>Contact Information</h2>
+    <p>
+        For any inquiries regarding this proposal, please contact:<br>
+        <strong>{{ contact_name }}</strong><br>
+        {{ company_name }}<br>
+        Email: {{ contact_email }}<br>
+        Phone: {{ contact_phone }}
+    </p>
+</div>
+
+</body>
+</html>

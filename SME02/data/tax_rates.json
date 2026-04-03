@@ -1,0 +1,28 @@
+{
+  "tax_rates": {
+    "IN": {
+      "name": "GST (India)",
+      "rate": 0.18,
+      "components": {
+        "CGST": 0.09,
+        "SGST": 0.09
+      }
+    },
+    "US": {
+      "name": "Sales Tax (US Average)",
+      "rate": 0.08
+    },
+    "UK": {
+      "name": "VAT (UK)",
+      "rate": 0.20
+    }
+  },
+  "currency_rates": {
+    "INR": 1.0,
+    "USD": 85.50,
+    "EUR": 92.30,
+    "GBP": 107.80
+  },
+  "default_region": "IN",
+  "default_currency": "INR"
+}
