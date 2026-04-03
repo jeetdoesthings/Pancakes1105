@@ -15,6 +15,7 @@ langchain-openai>=0.3.0
 
 # PDF Generation
 reportlab==4.2.2
+xhtml2pdf==0.2.16
 
 # Utilities
 aiofiles==24.1.0

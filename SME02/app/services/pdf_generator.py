@@ -1,89 +1,239 @@
 """
-PDF Generator Service (ReportLab Edition)
-=========================================
-Generates professional, boardroom-ready PDF quotations 
-using ReportLab Platypus. High-fidelity, zero-dependency engine.
+PDF Generator Service (IGNIS xhtml2pdf Edition)
+=============================================
+Creates professional quotation PDFs using xhtml2pdf + Jinja2 HTML templates.
+Restored as per user request to use the "Ignis Solutions" design.
 """
 
 import os
-from datetime import datetime
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
-    PageBreak, Image
-)
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
-
+from typing import Dict, Any
+from jinja2 import Template
+from xhtml2pdf import pisa
 from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 from app.config import settings
 
 
-class PDFGenerator:
-    """Generates professional PDF quotations from proposal data using ReportLab."""
-
-    def __init__(self):
-        self.styles = getSampleStyleSheet()
-        self._setup_custom_styles()
-
-    def _setup_custom_styles(self):
-        """Create a professional design system for the PDF."""
-        # Main Title Style
-        self.styles.add(ParagraphStyle(
-            name='QuotationTitle',
-            parent=self.styles['Heading1'],
-            fontSize=28,
-            leading=34,
-            alignment=TA_CENTER,
-            textColor=colors.HexColor("#1A365D"),  # Deep Navy
-            spaceAfter=20
-        ))
-        
-        # Section Header Style
-        self.styles.add(ParagraphStyle(
-            name='SectionHeader',
-            parent=self.styles['Heading2'],
-            fontSize=16,
-            leading=20,
-            alignment=TA_LEFT,
-            textColor=colors.HexColor("#2B6CB0"),  # Medium Blue
-            spaceBefore=15,
-            spaceAfter=10,
-            borderPadding=(0, 0, 5, 0),
-            borderWidth=0,
-            borderColor=colors.HexColor("#E2E8F0")
-        ))
-
-        # Body Text Style
-        self.styles.add(ParagraphStyle(
-            name='BodyTextMod',
-            parent=self.styles['Normal'],
-            fontSize=11,
-            leading=14,
-            alignment=TA_LEFT,
-            textColor=colors.HexColor("#4A5568"),  # Slate Gray
-            spaceAfter=8
-        ))
-
-        # Table Header Style
-        self.styles.add(ParagraphStyle(
-            name='TableHeader',
-            parent=self.styles['Normal'],
-            fontSize=10,
-            leading=12,
-            alignment=TA_LEFT,
-            textColor=colors.whitesmoke,
-            fontName='Helvetica-Bold'
-        ))
-
-    def _format_currency(self, value, currency="INR"):
+def _format_currency(amount, currency="USD") -> str:
+    """Format a number as currency."""
+    try:
+        val = float(amount)
         if currency == "INR":
-            return f"Rs. {value:,.0f}"
-        elif currency == "USD":
-            return f"${value:,.2f}"
-        return f"{currency} {value:,.2f}"
+            return f"Rs. {val:,.0f}"
+        return f"${val:,.2f}"
+    except (ValueError, TypeError):
+        return "$0.00"
+
+
+# ── HTML Template ────────────────────────────────────────────────────────────────
+# IGNIS Solutions Inc. Premium Template
+PDF_TEMPLATE = Template("""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: a4 portrait;
+    margin: 1.5cm;
+  }
+
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.4;
+    font-size: 10pt;
+  }
+
+  /* ── Header ── */
+  .header-table {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  .company-name {
+    font-size: 20pt;
+    font-weight: bold;
+    color: #1e3a8a;
+  }
+  .company-tagline {
+    font-size: 8pt;
+    color: #64748b;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 8pt;
+    color: #64748b;
+  }
+  .divider {
+    height: 2px;
+    background-color: #1e3a8a;
+    margin: 10px 0 20px 0;
+  }
+
+  /* ── Title ── */
+  .doc-title {
+    text-align: center;
+    font-size: 22pt;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 20px;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 15px 0 5px 0;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 5px 0 10px 0;
+  }
+  th {
+    background-color: #1e3a8a;
+    color: white;
+    font-weight: bold;
+    font-size: 9pt;
+    padding: 6px;
+    text-align: left;
+  }
+  td {
+    padding: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 9pt;
+  }
+  .label-col { font-weight: bold; color: #1e3a8a; width: 30%; }
+
+  /* ── Strategy badges ── */
+  .strategy-box {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #e2e8f0;
+  }
+  .strategy-box-pivot {
+    background-color: #fff7ed;
+    border-color: #f97316;
+  }
+  .strategy-box-match {
+    background-color: #f0fdf4;
+    border-color: #22c55e;
+  }
+  .strategy-label {
+    font-size: 9pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .strategy-label-pivot { color: #ea580c; }
+  .strategy-label-match { color: #16a34a; }
+  .rationale {
+    font-style: italic;
+    color: #475569;
+    font-size: 9pt;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 7pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 8px;
+  }
+</style>
+</head>
+<body>
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="company-name">{{ company_name }}</div>
+        <div class="company-tagline">Intelligent Business Solutions</div>
+      </td>
+      <td class="header-right">
+        Proposal Reference<br>
+        AUTO-{{ doc_id[:12] if doc_id else 'GEN' }}
+      </td>
+    </tr>
+  </table>
+  <div class="divider"></div>
+
+  <!-- Title -->
+  <div class="doc-title">Formal Proposal &amp; Quotation</div>
+
+  <!-- Client Details -->
+  <div class="section-header">Client Information</div>
+  <table>
+    <tr><td class="label-col">Client Name</td><td>{{ client_name }}</td></tr>
+    <tr><td class="label-col">RFP Reference</td><td>{{ rfp_ref }}</td></tr>
+    <tr><td class="label-col">Project Scope</td><td>{{ scope_summary }}</td></tr>
+    <tr><td class="label-col">Deadline</td><td>{{ deadline }}</td></tr>
+    <tr><td class="label-col">Stated Budget</td><td>{{ budget }}</td></tr>
+  </table>
+
+  <!-- Requirements -->
+  {% if requirements %}
+  <div class="section-header">Key Requirements</div>
+  <ul>
+    {% for req in requirements[:8] %}
+    <li>{{ req.item_name }}: {{ req.description }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <!-- Strategy Section -->
+  <div class="section-header">Strategic Approach</div>
+  <div class="strategy-box {{ 'strategy-box-pivot' if is_pivot else 'strategy-box-match' }}">
+    <div class="strategy-label {{ 'strategy-label-pivot' if is_pivot else 'strategy-label-match' }}">
+      {{ "STRATEGY: VALUE-ADD PIVOT" if is_pivot else "STRATEGY: COMPETITIVE MATCH" }}
+    </div>
+    <div class="rationale">"{{ rationale }}"</div>
+  </div>
+
+  <!-- Pricing Table -->
+  <div class="section-header">Investment Summary</div>
+  <table>
+    <tr><th>Description</th><th style="text-align:right">Amount ({{ currency }})</th></tr>
+    {% for item in line_items %}
+    <tr>
+      <td><b>{{ item.item_name }}</b><br><small>{{ item.description }}</small></td>
+      <td style="text-align:right">{{ _format_currency(item.total_price, currency) if not item.is_value_add else 'INCLUDED' }}</td>
+    </tr>
+    {% endfor %}
+    <tr style="background-color:#eff6ff; font-weight:bold">
+      <td>Total Investment</td>
+      <td style="text-align:right">{{ final_price_fmt }}</td>
+    </tr>
+  </table>
+
+  <!-- Market Analysis -->
+  {% if competitor_name %}
+  <div class="section-header">Market Analysis</div>
+  <table>
+    <tr><td class="label-col">Primary Competitor</td><td>{{ competitor_name }}</td></tr>
+    <tr><td class="label-col">Competitor Price</td><td>{{ competitor_price_fmt }}</td></tr>
+    <tr><td class="label-col">Our Price</td><td>{{ final_price_fmt }}</td></tr>
+    <tr><td class="label-col">Projected Delta</td><td>{{ delta }}</td></tr>
+  </table>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="footer">
+    This quotation is valid for 30 days from the date of issue.<br>
+    Generated autonomously by IGNIS RFP Orchestrator AI System
+  </div>
+</body>
+</html>
+""")
+
+
+class PDFGenerator:
+    """Generates professional proposal PDFs using xhtml2pdf."""
 
     def generate(
         self,
@@ -91,99 +241,48 @@ class PDFGenerator:
         requirements: ExtractedRequirements,
         pricing: PricingStrategy,
         proposal: ProposalDraft,
-        company_name: str = "Ering Solutions",
+        company_name: str = "IGNIS Solutions Inc.",
         contact_name: str = "Sales Team",
-        contact_email: str = "sales@eringsolutions.com",
+        contact_email: str = "sales@ignissolutions.com",
         contact_phone: str = "+91-9876543210",
     ) -> str:
-        """Generate a PDF quotation using ReportLab and return the file path."""
+        """Generate a professional proposal PDF using xhtml2pdf."""
         output_filename = f"quotation_{job_id}.pdf"
         output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
+
+        # Map data models to template context
+        is_pivot = any(not c.can_match for c in pricing.competitor_analyses)
         
-        doc = SimpleDocTemplate(
-            output_path,
-            pagesize=A4,
-            rightMargin=50,
-            leftMargin=50,
-            topMargin=50,
-            bottomMargin=50
-        )
+        comp_name = pricing.competitor_analyses[0].competitor_name if pricing.competitor_analyses else None
+        comp_price = pricing.competitor_analyses[0].competitor_price if pricing.competitor_analyses else 0
+        delta = f"{abs(pricing.competitor_analyses[0].price_difference_pct):.1f}%" if pricing.competitor_analyses else "N/A"
+
+        context = {
+            "company_name": company_name,
+            "doc_id": job_id.upper(),
+            "client_name": requirements.issuing_company or "Valued Client",
+            "rfp_ref": requirements.project_name or "N/A",
+            "scope_summary": f"Proposal for {requirements.project_name}",
+            "deadline": requirements.response_deadline or "N/A",
+            "budget": _format_currency(requirements.budget_amount, pricing.currency),
+            "requirements": requirements.scope_items,
+            "is_pivot": is_pivot,
+            "rationale": pricing.strategy_summary or "Standard pricing applied.",
+            "line_items": pricing.line_items,
+            "currency": pricing.currency,
+            "final_price_fmt": _format_currency(pricing.total, pricing.currency),
+            "competitor_name": comp_name,
+            "competitor_price_fmt": _format_currency(comp_price, pricing.currency),
+            "delta": delta,
+            "_format_currency": _format_currency
+        }
+
+        html_str = PDF_TEMPLATE.render(**context)
         
-        story = []
-        
-        # --- COVER PAGE ---
-        story.append(Spacer(1, 2*inch))
-        story.append(Paragraph("BUSINESS QUOTATION", self.styles['QuotationTitle']))
-        story.append(Paragraph(f"Project: {requirements.project_name or 'Strategic Proposal'}", self.styles['Heading2']))
-        story.append(Spacer(1, 0.5*inch))
-        
-        story.append(Paragraph(f"<b>Prepared for:</b> {requirements.issuing_company or 'Valued Client'}", self.styles['BodyTextMod']))
-        story.append(Paragraph(f"<b>Date:</b> {datetime.now().strftime('%B %d, %Y')}", self.styles['BodyTextMod']))
-        story.append(Paragraph(f"<b>Proposal ID:</b> SME02-{job_id.upper()}", self.styles['BodyTextMod']))
-        
-        story.append(Spacer(1, 2*inch))
-        story.append(Paragraph(f"<b>From:</b> {company_name}", self.styles['BodyTextMod']))
-        story.append(Paragraph(f"Contact: {contact_name}", self.styles['BodyTextMod']))
-        story.append(Paragraph(contact_email, self.styles['BodyTextMod']))
-        story.append(Paragraph(contact_phone, self.styles['BodyTextMod']))
-        
-        story.append(PageBreak())
-        
-        # --- EXECUTIVE SUMMARY ---
-        story.append(Paragraph("Executive Summary", self.styles['SectionHeader']))
-        story.append(Paragraph(proposal.executive_summary or "Proposal details follow.", self.styles['BodyTextMod']))
-        
-        # --- PRICING TABLE ---
-        story.append(Paragraph("Commercial Proposal", self.styles['SectionHeader']))
-        
-        data = [[
-            Paragraph("<b>Item Description</b>", self.styles['TableHeader']), 
-            Paragraph("<b>Qty</b>", self.styles['TableHeader']), 
-            Paragraph("<b>Unit Price</b>", self.styles['TableHeader']), 
-            Paragraph("<b>Total</b>", self.styles['TableHeader'])
-        ]]
-        
-        for item in pricing.line_items:
-            data.append([
-                Paragraph(f"<b>{item.item_name}</b><br/><font size='9'>{item.description}</font>", self.styles['BodyTextMod']),
-                str(item.quantity),
-                self._format_currency(item.unit_price, pricing.currency),
-                self._format_currency(item.total_price, pricing.currency)
-            ])
+        with open(output_path, "wb") as f:
+            pisa_status = pisa.CreatePDF(html_str, dest=f)
             
-        # Summary rows
-        data.append(["", "", "Subtotal", self._format_currency(pricing.subtotal, pricing.currency)])
-        data.append(["", "", f"Tax ({int(pricing.tax_rate*100)}%)", self._format_currency(pricing.tax_amount, pricing.currency)])
-        data.append(["", "", Paragraph("<b>GRAND TOTAL</b>", self.styles['BodyTextMod']), 
-                    Paragraph(f"<b>{self._format_currency(pricing.total, pricing.currency)}</b>", self.styles['BodyTextMod'])])
-        
-        table = Table(data, colWidths=[3.2*inch, 0.6*inch, 1.2*inch, 1.2*inch])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1A365D")),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -4), colors.HexColor("#F7FAFC")),
-            ('GRID', (0, 0), (-1, -4), 0.5, colors.HexColor("#E2E8F0")),
-            ('LINEBELOW', (0, -3), (-1, -1), 1, colors.HexColor("#2B6CB0")),
-            ('ALIGN', (2, -3), (3, -1), 'RIGHT'),
-        ]))
-        story.append(table)
-        
-        # --- PROPOSAL DETAILS ---
-        if proposal.technical_proposal:
-            story.append(Paragraph("Technical Specifications", self.styles['SectionHeader']))
-            for section in proposal.technical_proposal:
-                story.append(Paragraph(section.title, self.styles['Heading3']))
-                story.append(Paragraph(section.content, self.styles['BodyTextMod']))
-                story.append(Spacer(1, 0.1*inch))
-                
-        # --- TERMS AND CONDITIONS ---
-        story.append(Paragraph("Terms and Conditions", self.styles['SectionHeader']))
-        story.append(Paragraph(proposal.terms_and_conditions or "Standard terms apply.", self.styles['BodyTextMod']))
-        
-        # Build document
-        doc.build(story)
+        if pisa_status.err:
+            raise RuntimeError(f"PDF generation failed: {pisa_status.err}")
+
         return output_path
