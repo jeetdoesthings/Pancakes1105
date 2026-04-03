@@ -11,6 +11,9 @@ venv/
 .env
 SME02/.env
 
+# Salesforce tooling
+.sfdx/
+
 # Editor/IDE
 .vscode/
 .idea/
