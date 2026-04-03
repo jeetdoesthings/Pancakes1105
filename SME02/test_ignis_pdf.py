@@ -15,7 +15,14 @@ def test_ignis_pdf():
         project_name="IT Infrastructure Upgrade",
         issuing_company="TechCorp India",
         budget_amount=5000000,
-        scope_items=[ScopeItem(item_name="Server Rack", quantity=2, category="hardware")]
+        scope_items=[
+            ScopeItem(
+                item_name="Server Rack",
+                description="42U enterprise-grade rack with cooling and cable management",
+                quantity=2,
+                category="hardware"
+            )
+        ]
     )
     
     # Trigger a PIVOT strategy (can_match=False)

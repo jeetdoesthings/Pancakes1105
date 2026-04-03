@@ -349,14 +349,22 @@ async function onPdfReady() {
     // Show download section
     showSection('downloadSection');
     
-    // We use .pdf in the URL to help the browser recognize the type
-    const downloadUrl = `/api/download-pdf/${state.jobId}.pdf`;
+    const downloadUrl = `/api/download-pdf/${state.jobId}`;
     const filename = `SME02_Quotation_${state.jobId}.pdf`;
 
     // Modern Blob approach to force filename extension across all browsers
     try {
         els.downloadPdfBtn.innerHTML = '<span class="status-dot"></span> Preparing Download...';
         const response = await fetch(downloadUrl);
+        if (!response.ok) {
+            throw new Error(`Download endpoint returned ${response.status}`);
+        }
+
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/pdf')) {
+            throw new Error(`Unexpected response content type: ${contentType || 'unknown'}`);
+        }
+
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
         
