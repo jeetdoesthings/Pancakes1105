@@ -92,10 +92,15 @@ class RAGService:
             try:
                 results = self.vector_store.similarity_search(
                     query=query_text,
-                    k=k,
-                    filter={"job_id": job_id}
+                    k=k * 3,
+                    filter={"job_id": job_id},
                 )
-                return [{"content": d.page_content, "metadata": d.metadata} for d in results]
+                # Post-filter so chunks never leak across jobs if the backend ignores filter.
+                filtered = [
+                    d for d in results
+                    if (d.metadata or {}).get("job_id") == job_id
+                ][:k]
+                return [{"content": d.page_content, "metadata": d.metadata} for d in filtered]
             except Exception:
                 # Fall through to lexical search if vector retrieval fails at runtime.
                 pass

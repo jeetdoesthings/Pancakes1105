@@ -1,12 +1,16 @@
 import json
 import os
+from functools import lru_cache
 from typing import List, Dict, Any
 from langchain_core.tools import tool
 from app.config import settings
 
+
+@lru_cache(maxsize=32)
 def _load_json(filename: str) -> dict:
+    """Load JSON from `data/` (cached; restart server to pick up file edits)."""
     filepath = os.path.join(settings.DATA_DIR, filename)
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
 @tool

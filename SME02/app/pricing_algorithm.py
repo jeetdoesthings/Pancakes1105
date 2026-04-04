@@ -15,6 +15,7 @@ from typing import List, Tuple, Optional
 def compute_price(
     cost: float,
     competitor_prices: List[float],
+    standard_price: Optional[float] = None,
     margin: float = 0.30,
     epsilon: float = 0.01,
     budget: Optional[float] = None,
@@ -37,8 +38,12 @@ def compute_price(
     if cost <= 0:
         return 0.0, "ERROR", "Invalid base cost (≤0)."
 
-    # 1. Compute baseline target price
-    target_price = cost * (1 + margin) * urgency_multiplier
+    # 1. Compute baseline target price (use standard_price if provided and valid)
+    computed_target = cost * (1 + margin) * urgency_multiplier
+    if standard_price and standard_price > cost:
+        target_price = min(standard_price, computed_target) * urgency_multiplier
+    else:
+        target_price = computed_target
 
     # 2. Determine strategy
     if not competitor_prices:

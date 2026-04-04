@@ -361,10 +361,6 @@ function streamAgentFeed(url) {
 
     eventSource.onerror = () => {
         eventSource.close();
-        // Check if we got data anyway
-        if (state.jobData) {
-            onProcessingComplete();
-        }
     };
 }
 
@@ -533,27 +529,27 @@ function populateReview() {
         let html = `
             <div class="review-item">
                 <div class="review-item-label">Project Name</div>
-                <div class="review-item-value">${req.project_name || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(req.project_name || 'N/A')}</div>
             </div>
             <div class="review-item">
                 <div class="review-item-label">Client</div>
-                <div class="review-item-value">${req.issuing_company || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(req.issuing_company || 'N/A')}</div>
             </div>
             <div class="review-item">
                 <div class="review-item-label">Response Deadline</div>
-                <div class="review-item-value">${req.response_deadline || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(req.response_deadline || 'N/A')}</div>
             </div>
             <div class="review-item">
                 <div class="review-item-label">Budget</div>
-                <div class="review-item-value highlight">${req.budget_currency} ${formatNumber(req.budget_amount)}</div>
+                <div class="review-item-value highlight">${escapeHtml(req.budget_currency)} ${formatNumber(req.budget_amount)}</div>
             </div>
             <div class="review-item">
                 <div class="review-item-label">Scope Items (${(req.scope_items || []).length})</div>
                 <div class="review-item-value">
                     ${(req.scope_items || []).map(item =>
                         `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
-                            <strong>${item.item_name}</strong> — Qty: ${item.quantity} (${item.category})<br>
-                            <span style="color:var(--text-muted);font-size:12px">${item.specifications || item.description}</span>
+                            <strong>${escapeHtml(item.item_name)}</strong> — Qty: ${item.quantity} (${escapeHtml(item.category)})<br>
+                            <span style="color:var(--text-muted);font-size:12px">${escapeHtml(item.specifications || item.description)}</span>
                         </div>`
                     ).join('')}
                 </div>
@@ -578,7 +574,7 @@ function populateReview() {
                 <tbody>
                     ${(pricing.line_items || []).map(item => `
                         <tr>
-                            <td>${item.item_name}</td>
+                            <td>${escapeHtml(item.item_name)}</td>
                             <td>${item.quantity}</td>
                             <td style="text-align:right">₹${formatNumber(item.unit_price)}</td>
                             <td style="text-align:right">₹${formatNumber(item.total_price)}</td>
@@ -586,7 +582,7 @@ function populateReview() {
                     `).join('')}
                     ${(pricing.value_adds || []).map(va => `
                         <tr>
-                            <td>${va.item_name} <span class="value-add-tag">Free Value-Add</span></td>
+                            <td>${escapeHtml(va.item_name)} <span class="value-add-tag">Free Value-Add</span></td>
                             <td>${va.quantity}</td>
                             <td style="text-align:right">INCLUDED</td>
                             <td style="text-align:right">INCLUDED</td>
@@ -612,7 +608,7 @@ function populateReview() {
             html += `
                 <div class="review-item">
                     <div class="review-item-label">Pricing Rationale</div>
-                    <div class="review-item-value">${pricing.pricing_rationale}</div>
+                    <div class="review-item-value">${escapeHtml(pricing.pricing_rationale)}</div>
                 </div>
             `;
         }
@@ -624,9 +620,9 @@ function populateReview() {
                     <div class="review-item-value">
                         ${pricing.competitor_analyses.map(ca => `
                             <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
-                                <strong>${ca.competitor_name}</strong> — ${ca.product_id}<br>
+                                <strong>${escapeHtml(ca.competitor_name)}</strong> — ${escapeHtml(ca.product_id)}<br>
                                 ${ca.competitor_price > 0 ? `Their Price: ₹${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ₹${formatNumber(ca.our_price)}<br>
-                                <span style="color:var(--text-muted);font-size:12px">${ca.recommendation}</span>
+                                <span style="color:var(--text-muted);font-size:12px">${escapeHtml(ca.recommendation)}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -643,7 +639,7 @@ function populateReview() {
         let html = `
             <div class="review-item">
                 <div class="review-item-label">Executive Summary</div>
-                <div class="review-item-value">${proposal.executive_summary || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(proposal.executive_summary || 'N/A')}</div>
             </div>
         `;
 
@@ -651,8 +647,8 @@ function populateReview() {
             proposal.technical_proposal.forEach(section => {
                 html += `
                     <div class="review-item">
-                        <div class="review-item-label">${section.title}</div>
-                        <div class="review-item-value">${section.content}</div>
+                        <div class="review-item-label">${escapeHtml(section.title)}</div>
+                        <div class="review-item-value">${escapeHtml(section.content)}</div>
                     </div>
                 `;
             });
@@ -661,11 +657,11 @@ function populateReview() {
         html += `
             <div class="review-item">
                 <div class="review-item-label">Value Proposition</div>
-                <div class="review-item-value">${proposal.value_proposition || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(proposal.value_proposition || 'N/A')}</div>
             </div>
             <div class="review-item">
                 <div class="review-item-label">Support Plan</div>
-                <div class="review-item-value">${proposal.support_plan || 'N/A'}</div>
+                <div class="review-item-value">${escapeHtml(proposal.support_plan || 'N/A')}</div>
             </div>
         `;
 
@@ -746,9 +742,31 @@ async function submitChanges() {
         changes: state.changes,
     };
 
-    // Store feedback on server and stream revision
-    const feedbackJson = encodeURIComponent(JSON.stringify(feedback));
-    streamAgentFeed(`/api/revise/${state.jobId}?feedback_json=${feedbackJson}`);
+    try {
+        const postRes = await fetch(`/api/revise/${state.jobId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feedback),
+        });
+        if (!postRes.ok) {
+            const err = await postRes.json().catch(() => ({}));
+            throw new Error(err.detail || postRes.statusText || 'Failed to queue revision');
+        }
+    } catch (e) {
+        console.error(e);
+        setGlobalStatus('error', 'Could not submit revision');
+        els.submitChangesBtn.disabled = false;
+        els.submitChangesBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Submit Changes & Re-run Agents
+    `;
+        return;
+    }
+
+    streamAgentFeed(`/api/revise/${state.jobId}`);
 
     // Clear changes
     state.changes = [];

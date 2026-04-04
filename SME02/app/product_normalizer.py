@@ -10,16 +10,19 @@ Design Principle: Structured over Prompt-Based (Section 7.1)
 import json
 import os
 from difflib import SequenceMatcher
+from functools import lru_cache
 from typing import Optional, List, Dict, Any
 from app.config import settings
 
 
-def _load_catalog() -> List[Dict[str, Any]]:
-    """Load the internal product catalog."""
+@lru_cache(maxsize=1)
+def _load_catalog() -> tuple[Dict[str, Any], ...]:
+    """Load the internal product catalog (cached; restart process to pick up file edits)."""
     filepath = os.path.join(settings.DATA_DIR, "internal_pricing.json")
     with open(filepath, "r") as f:
         data = json.load(f)
-    return data.get("products", [])
+    products = data.get("products", [])
+    return tuple(products)
 
 
 def normalize_product_name(query: str, threshold: float = 0.35) -> Optional[Dict[str, Any]]:
@@ -36,7 +39,7 @@ def normalize_product_name(query: str, threshold: float = 0.35) -> Optional[Dict
     Returns:
         The best-matching product dict, or None if no match exceeds threshold.
     """
-    catalog = _load_catalog()
+    catalog = list(_load_catalog())
     query_lower = query.lower().strip()
     
     best_match = None

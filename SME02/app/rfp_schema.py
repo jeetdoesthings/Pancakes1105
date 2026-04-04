@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, constr, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import date
 import uuid
+
 
 class UniversalRFP(BaseModel):
     rfpId: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID for the RFP")
@@ -17,8 +18,9 @@ class UniversalRFP(BaseModel):
     location: Optional[str] = Field(None, max_length=200, description="Region or country (for tax/currency context)")
     description: Optional[str] = Field(None, max_length=100000, description="Detailed description or requirements text")
 
-    @validator("currency")
-    def validate_currency(cls, v):
+    @field_validator("currency")
+    @classmethod
+    def validate_currency(cls, v: str) -> str:
         if not v.isalpha() or not v.isupper():
-            raise ValueError("Currency must be a 3-letter uppercase ISO 4217 code (e.g., USD, INR)")
+            raise ValueError("Currency must be a 3-letter uppercase ISO 4217 code (e.g. USD, INR)")
         return v

@@ -7,7 +7,7 @@ the proposal against them. Flags risks before final output.
 Design Principle: Graceful Degradation (Section 7.4)
 """
 
-from typing import List, Dict
+from typing import List, Dict, Any
 from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 
 
@@ -59,7 +59,7 @@ def validate_proposal_compliance(
     requirements: ExtractedRequirements,
     pricing: PricingStrategy,
     proposal: ProposalDraft,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Cross-check the proposal against compliance requirements.
     Returns a validation report with pass/fail status and risk flags.

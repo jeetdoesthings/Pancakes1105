@@ -4,7 +4,7 @@ An AI-powered multi-agent system that automates the Request for Proposal (RFP) r
 
 ## 🚀 Key Upgrades (v2.0)
 - **Dependency-Light PDF Engine**: Migrated from WeasyPrint to **xhtml2pdf + Jinja2 templates**, avoiding system-level Pango/Cairo setup and improving cross-platform reliability.
-- **OpenAI-Powered Intelligence**: Transitioned from local Ollama to **OpenAI (GPT-4o-mini)** for superior reasoning, extraction, and strategic copywriting.
+- **Hybrid LLM Routing**: Uses **Gemini (primary)** plus **Groq-hosted Llama (fast/fallback)** for balanced quality and speed.
 - **Windows Stability**: Hardened UTF-8 encoding across the streaming backend to support global currency symbols (₹, $, €) without crashes.
 
 ## 🤖 Multi-Agent Framework
@@ -16,7 +16,7 @@ The system uses a sequential DAG (Directed Acyclic Graph) powered by **LangGraph
 ## 🛠️ Tech Stack
 - **Backend**: FastAPI (Python 3.10+)
 - **Orchestration**: LangChain & LangGraph
-- **LLM**: OpenAI (GPT-4o-mini) / DeepSeek
+- **LLM**: Gemini (primary) + Groq Llama (fallback/fast)
 - **PDF Generation**: xhtml2pdf + Jinja2 (Template-Driven Layout)
 - **Frontend**: Glassmorphic Vanilla Web Components (HTML/CSS/JS)
 
@@ -31,8 +31,16 @@ pip install -r requirements.txt
 2. **Configure Environment**:
 Create a `.env` file in the root directory:
 ```env
-OPENAI_API_KEY=sk-...
-LLM_MODEL_NAME=gpt-4o-mini
+GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key
+PRIMARY_MODEL=gemini-2.5-flash
+FAST_MODEL=llama-3.3-70b-versatile
+ESTIMATOR_MODEL=llama-3.1-8b-instant
+# Optional for vector embeddings (otherwise lexical fallback is used):
+# OPENAI_API_KEY=sk-...
+# Optional: DEBUG=true for hot reload (defaults to false)
+# MAX_UPLOAD_BYTES=15728640
+# MAX_RFP_TEXT_CHARS=2000000
 ```
 
 3. **Run the Application**:

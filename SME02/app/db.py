@@ -94,6 +94,3 @@ def get_rfp_by_id(rfp_id: str) -> Optional[UniversalRFP]:
         if row:
             return UniversalRFP(**dict(row))
         return None
-
-# Initialize upon import
-init_db()

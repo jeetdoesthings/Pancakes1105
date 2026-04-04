@@ -8,12 +8,6 @@
         @page {
             size: A4;
             margin: 20mm 18mm 25mm 18mm;
-            @bottom-center {
-                content: "Page " counter(page) " of " counter(pages);
-                font-size: 9px;
-                color: #888;
-                font-family: 'Inter', 'Helvetica Neue', sans-serif;
-            }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -284,6 +278,35 @@
         .markdown-container h1 { font-size: 18px; border: none; padding: 0; margin-top: 24px; color: #1E293B; }
         .markdown-container h2 { font-size: 15px; color: #334155; }
         .markdown-container h3 { font-size: 13px; color: #475569; }
+
+        .small-note {
+            font-size: 9px;
+            color: #64748B;
+            margin-top: 6px;
+        }
+
+        .legal-list li {
+            margin-bottom: 5px;
+        }
+
+        .signature-grid {
+            margin-top: 28px;
+            width: 100%;
+        }
+        .signature-grid td {
+            width: 50%;
+            vertical-align: top;
+            padding-top: 28px;
+            border-bottom: none;
+        }
+        .signature-line {
+            margin-top: 26px;
+            border-top: 1px solid #334155;
+            width: 85%;
+            padding-top: 6px;
+            font-size: 10px;
+            color: #334155;
+        }
     </style>
 </head>
 <body>
@@ -394,6 +417,103 @@
     </tbody>
 </table>
 
+<h2>Detailed Calculation Sheet</h2>
+<table>
+    <thead>
+        <tr>
+            <th style="width:4%">#</th>
+            <th style="width:24%">Item</th>
+            <th style="width:8%">Qty</th>
+            <th style="width:12%" class="text-right">Unit</th>
+            <th style="width:14%" class="text-right">Base (Qty x Unit)</th>
+            <th style="width:8%" class="text-right">GST %</th>
+            <th style="width:12%" class="text-right">GST Amt</th>
+            <th style="width:12%" class="text-right">Line Total</th>
+            <th style="width:6%">Strat.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in calculation_rows %}
+        <tr>
+            <td>{{ row.sr_no }}</td>
+            <td>
+                <strong>{{ row.item_name }}</strong>
+                {% if row.description %}
+                <br><span style="font-size: 9px; color: #64748B;">{{ row.description }}</span>
+                {% endif %}
+                {% if row.volume_discount_pct > 0 %}
+                <br><span style="font-size: 9px; color: #0369A1;">Volume discount: {{ (row.volume_discount_pct * 100) | int }}% {{ row.volume_tier_label }}</span>
+                {% endif %}
+                {% if row.is_unverified_estimate %}
+                <br><span style="font-size: 9px; color: #B91C1C;">Estimated item - subject to commercial validation</span>
+                {% endif %}
+            </td>
+            <td>{{ row.quantity }}</td>
+            <td class="text-right">{{ row.unit_price | format_currency(currency) }}</td>
+            <td class="text-right">{{ row.base_amount | format_currency(currency) }}</td>
+            <td class="text-right">{{ (row.gst_rate * 100) | round(0) }}%</td>
+            <td class="text-right">{{ row.gst_amount | format_currency(currency) }}</td>
+            <td class="text-right"><strong>{{ row.line_total | format_currency(currency) }}</strong></td>
+            <td>{{ row.strategy_type }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="subtotal-row">
+            <td colspan="7"><strong>Grand Total (sum of line totals)</strong></td>
+            <td class="text-right"><strong>{{ pricing.total | format_currency(currency) }}</strong></td>
+            <td>-</td>
+        </tr>
+    </tbody>
+</table>
+<p class="small-note">All values are computed line-by-line with category-wise GST and quantity multipliers. Arithmetic basis: Line Total = (Quantity x Unit Price) + GST.</p>
+
+{% if value_add_rows %}
+<h2>Included Value-Add Register (No Additional Charge)</h2>
+<table>
+    <thead>
+        <tr>
+            <th style="width:8%">#</th>
+            <th style="width:32%">Value-Add Item</th>
+            <th style="width:40%">Description</th>
+            <th style="width:10%" class="text-right">Delivery Cost</th>
+            <th style="width:10%" class="text-right">Value Score</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in value_add_rows %}
+        <tr>
+            <td>{{ row.sr_no }}</td>
+            <td>{{ row.item_name }}</td>
+            <td>{{ row.description }}</td>
+            <td class="text-right">{{ row.delivery_cost | format_currency(currency) }}</td>
+            <td class="text-right">{{ row.perceived_score }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if proposal.compliance_matrix %}
+<h1>Compliance Matrix</h1>
+<table>
+    <thead>
+        <tr>
+            <th style="width:65%">RFP Criterion</th>
+            <th style="width:15%">Addressable</th>
+            <th style="width:20%">Reference</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in proposal.compliance_matrix %}
+        <tr>
+            <td>{{ row.get('criterion', '') }}</td>
+            <td>{{ 'Yes' if row.get('addressable_by_us', True) else 'No' }}</td>
+            <td>{{ row.get('reference', 'Covered in proposal scope') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 <!-- ========== VALUE PROPOSITION ========== -->
 <h1>Strategic Value Proposition</h1>
 <div class="markdown-container">
@@ -427,8 +547,60 @@
     {{ proposal.terms_and_conditions | markdown | safe }}
 </div>
 
+<h1>Commercial & Contractual Framework</h1>
+<h2>Payment Milestones</h2>
+<table>
+    <thead>
+        <tr>
+            <th style="width:45%">Milestone</th>
+            <th style="width:15%" class="text-right">Weight</th>
+            <th style="width:40%">Trigger</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in payment_milestones %}
+        <tr>
+            <td>{{ m.milestone }}</td>
+            <td class="text-right">{{ m.percent }}%</td>
+            <td>{{ m.trigger }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Assumptions</h2>
+<ul class="legal-list">
+    {% for a in assumptions %}
+    <li>{{ a }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Exclusions</h2>
+<ul class="legal-list">
+    {% for e in exclusions %}
+    <li>{{ e }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Validity & Acceptance</h2>
+<p>This quotation is valid for <strong>{{ quotation_validity_days }} days</strong> from the issue date, subject to scope and commercial assumptions stated herein.</p>
+<table class="signature-grid">
+    <tr>
+        <td>
+            <strong>For {{ company_name }}</strong>
+            <div class="signature-line">Authorized Signatory</div>
+            <div class="small-note">Name / Designation / Date</div>
+        </td>
+        <td>
+            <strong>For {{ requirements.issuing_company or 'Client' }}</strong>
+            <div class="signature-line">Client Acceptance</div>
+            <div class="small-note">Name / Designation / Date / Stamp</div>
+        </td>
+    </tr>
+</table>
+
 <!-- ========== AGENT REASONING (Transparency) ========== -->
-{% if pricing.competitor_analyses %}
+{% if include_internal_appendix and pricing.competitor_analyses %}
 <div class="page-break"></div>
 <h1>AI Optimization Report</h1>
 <p style="color: #64748B; margin-bottom: 20px;"><em>INTERNAL USE ONLY: This section demonstrates the autonomous decisions made by our AI agents in structuring this competitive proposal.</em></p>

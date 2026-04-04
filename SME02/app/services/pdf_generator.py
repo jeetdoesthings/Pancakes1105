@@ -1,31 +1,31 @@
 """
-PDF Generator Service (IGNIS xhtml2pdf Edition)
-=============================================
-Creates professional quotation PDFs using xhtml2pdf + Jinja2 HTML templates.
-Restored as per user request to use the "Ignis Solutions" design.
+PDF Generator Service (xhtml2pdf + Jinja2)
+==========================================
+Creates professional quotation PDFs from structured proposal data.
 """
 
 import os
-from typing import Dict, Any
+from datetime import datetime
 from jinja2 import Template, Environment, FileSystemLoader
 from xhtml2pdf import pisa
 from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 from app.config import settings
 
 
-def _format_currency(amount, currency="USD") -> str:
-    """Format a number as currency."""
+def format_currency_amount(amount, currency: str = "INR") -> str:
+    """Format a numeric amount for display in PDFs and tables."""
     try:
         val = float(amount)
-        if currency == "INR":
-            return f"Rs. {val:,.0f}"
-        return f"${val:,.2f}"
     except (ValueError, TypeError):
-        return "$0.00"
+        return "—"
+    if currency == "INR":
+        return f"₹{val:,.0f}"
+    if currency == "USD":
+        return f"${val:,.2f}"
+    return f"{currency} {val:,.2f}"
 
 
-# ── HTML Template ────────────────────────────────────────────────────────────────
-# IGNIS Solutions Inc. Premium Template
+# ── HTML Template (SME02) ─────────────────────────────────────────────────────
 PDF_TEMPLATE = Template("""
 <!DOCTYPE html>
 <html>
@@ -44,7 +44,6 @@ PDF_TEMPLATE = Template("""
     font-size: 10pt;
   }
 
-  /* ── Header ── */
   .header-table {
     width: 100%;
     margin-bottom: 5px;
@@ -69,7 +68,6 @@ PDF_TEMPLATE = Template("""
     margin: 10px 0 20px 0;
   }
 
-  /* ── Title ── */
   .doc-title {
     text-align: center;
     font-size: 22pt;
@@ -78,7 +76,6 @@ PDF_TEMPLATE = Template("""
     margin-bottom: 20px;
   }
 
-  /* ── Section headers ── */
   .section-header {
     font-size: 11pt;
     font-weight: bold;
@@ -88,7 +85,13 @@ PDF_TEMPLATE = Template("""
     border-bottom: 1px solid #e2e8f0;
   }
 
-  /* ── Tables ── */
+  .body-text {
+    font-size: 9pt;
+    color: #334155;
+    margin: 6px 0 12px 0;
+    white-space: pre-wrap;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -109,7 +112,6 @@ PDF_TEMPLATE = Template("""
   }
   .label-col { font-weight: bold; color: #1e3a8a; width: 30%; }
 
-  /* ── Strategy badges ── */
   .strategy-box {
     padding: 10px;
     margin: 10px 0;
@@ -136,7 +138,6 @@ PDF_TEMPLATE = Template("""
     font-size: 9pt;
   }
 
-  /* ── Footer ── */
   .footer {
     margin-top: 30px;
     text-align: center;
@@ -148,7 +149,6 @@ PDF_TEMPLATE = Template("""
 </style>
 </head>
 <body>
-  <!-- Header -->
   <table class="header-table">
     <tr>
       <td>
@@ -163,10 +163,8 @@ PDF_TEMPLATE = Template("""
   </table>
   <div class="divider"></div>
 
-  <!-- Title -->
   <div class="doc-title">Formal Proposal &amp; Quotation</div>
 
-  <!-- Client Details -->
   <div class="section-header">Client Information</div>
   <table>
     <tr><td class="label-col">Client Name</td><td>{{ client_name }}</td></tr>
@@ -176,7 +174,11 @@ PDF_TEMPLATE = Template("""
     <tr><td class="label-col">Stated Budget</td><td>{{ budget }}</td></tr>
   </table>
 
-  <!-- Requirements -->
+  {% if executive_summary %}
+  <div class="section-header">Executive Summary</div>
+  <div class="body-text">{{ executive_summary }}</div>
+  {% endif %}
+
   {% if requirements %}
   <div class="section-header">Key Requirements</div>
   <ul>
@@ -186,7 +188,6 @@ PDF_TEMPLATE = Template("""
   </ul>
   {% endif %}
 
-  <!-- Strategy Section -->
   <div class="section-header">Strategic Approach</div>
   <div class="strategy-box {{ 'strategy-box-pivot' if is_pivot else 'strategy-box-match' }}">
     <div class="strategy-label {{ 'strategy-label-pivot' if is_pivot else 'strategy-label-match' }}">
@@ -195,14 +196,13 @@ PDF_TEMPLATE = Template("""
     <div class="rationale">"{{ rationale }}"</div>
   </div>
 
-  <!-- Pricing Table -->
   <div class="section-header">Investment Summary</div>
   <table>
     <tr><th>Description</th><th style="text-align:right">Amount ({{ currency }})</th></tr>
     {% for item in line_items %}
     <tr>
       <td><b>{{ item.item_name }}</b><br><small>{{ item.description }}</small></td>
-      <td style="text-align:right">{{ _format_currency(item.total_price, currency) if not item.is_value_add else 'INCLUDED' }}</td>
+      <td style="text-align:right">{{ format_currency_amount(item.total_price, currency) if not item.is_value_add else 'INCLUDED' }}</td>
     </tr>
     {% endfor %}
     <tr style="background-color:#eff6ff; font-weight:bold">
@@ -211,7 +211,6 @@ PDF_TEMPLATE = Template("""
     </tr>
   </table>
 
-  <!-- Market Analysis -->
   {% if competitor_name %}
   <div class="section-header">Market Analysis</div>
   <table>
@@ -222,10 +221,9 @@ PDF_TEMPLATE = Template("""
   </table>
   {% endif %}
 
-  <!-- Footer -->
   <div class="footer">
     This quotation is valid for 30 days from the date of issue.<br>
-    Generated autonomously by IGNIS RFP Orchestrator AI System
+    Generated by SME02 — Autonomous RFP Response Orchestrator
   </div>
 </body>
 </html>
@@ -239,26 +237,66 @@ class PDFGenerator:
         self.template_env = Environment(
             loader=FileSystemLoader(settings.TEMPLATES_DIR)
         )
-        # Add custom filters
         self.template_env.filters["format_currency"] = self._format_currency
         self.template_env.filters["format_number"] = self._format_number
-        
+
         import markdown
         self.template_env.filters["markdown"] = lambda text: markdown.markdown(text) if text else ""
 
     @staticmethod
     def _format_currency(value, currency="INR"):
-        """Format a number as currency."""
-        if currency == "INR":
-            return f"₹{value:,.0f}"
-        elif currency == "USD":
-            return f"${value:,.2f}"
-        return f"{currency} {value:,.2f}"
+        return format_currency_amount(value, currency)
 
     @staticmethod
     def _format_number(value):
-        """Format a number with commas."""
-        return f"{value:,.0f}"
+        try:
+            return f"{float(value):,.0f}"
+        except (ValueError, TypeError):
+            return "0"
+
+    @staticmethod
+    def _safe_iterable(value):
+      """Return a list for any iterable-like value, else an empty list."""
+      if value is None or value is NotImplemented:
+        return []
+      if isinstance(value, list):
+        return value
+      if isinstance(value, tuple):
+        return list(value)
+      return []
+
+    @staticmethod
+    def _safe_text(value) -> str:
+      """Return a string for text fields and guard against sentinels."""
+      if value is None or value is NotImplemented:
+        return ""
+      return str(value)
+
+    @staticmethod
+    def _default_payment_milestones() -> list[dict]:
+      return [
+        {"milestone": "Purchase Order / Contract Signing", "percent": 40, "trigger": "On PO release and project kickoff"},
+        {"milestone": "Delivery / Implementation", "percent": 40, "trigger": "On delivery or completion of implementation phase"},
+        {"milestone": "UAT Sign-off / Final Handover", "percent": 20, "trigger": "On final acceptance and handover"},
+      ]
+
+    @staticmethod
+    def _default_assumptions() -> list[str]:
+      return [
+        "Client will provide timely access to site, stakeholders, and required infrastructure.",
+        "Any scope changes after sign-off will be handled through a formal change request.",
+        "All third-party licenses, if required, are either client-provided or quoted separately.",
+        "Project timelines are based on mutually agreed dependencies and response SLAs.",
+      ]
+
+    @staticmethod
+    def _default_exclusions() -> list[str]:
+      return [
+        "Civil, electrical, and structural modifications unless explicitly mentioned in scope.",
+        "Out-of-scope integrations and custom developments not listed in the approved BOQ.",
+        "Regulatory approvals, statutory fees, and duties outside quoted taxes.",
+        "Travel, lodging, and on-site expenses for locations not listed in the RFP unless stated.",
+      ]
 
     def generate(
         self,
@@ -266,47 +304,98 @@ class PDFGenerator:
         requirements: ExtractedRequirements,
         pricing: PricingStrategy,
         proposal: ProposalDraft,
-        company_name: str = "IGNIS Solutions Inc.",
+        company_name: str = "Ering Solutions",
         contact_name: str = "Sales Team",
-        contact_email: str = "sales@ignissolutions.com",
+        contact_email: str = "sales@eringsolutions.com",
         contact_phone: str = "+91-9876543210",
     ) -> str:
         """Generate a professional proposal PDF using xhtml2pdf."""
         output_filename = f"quotation_{job_id}.pdf"
         output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
 
-        # Map data models to template context
-        is_pivot = any(not c.can_match for c in pricing.competitor_analyses)
-        
-        comp_name = pricing.competitor_analyses[0].competitor_name if pricing.competitor_analyses else None
-        comp_price = pricing.competitor_analyses[0].competitor_price if pricing.competitor_analyses else 0
-        delta = f"{abs(pricing.competitor_analyses[0].price_difference_pct):.1f}%" if pricing.competitor_analyses else "N/A"
+        # Defensive normalization for occasionally malformed agent payloads.
+        # Prevents runtime errors like: 'NotImplementedType' object is not iterable.
+        pricing.line_items = self._safe_iterable(getattr(pricing, "line_items", []))
+        pricing.value_adds = self._safe_iterable(getattr(pricing, "value_adds", []))
+        pricing.competitor_analyses = self._safe_iterable(getattr(pricing, "competitor_analyses", []))
 
+        proposal.technical_proposal = self._safe_iterable(getattr(proposal, "technical_proposal", []))
+        proposal.compliance_matrix = self._safe_iterable(getattr(proposal, "compliance_matrix", []))
+        proposal.executive_summary = self._safe_text(getattr(proposal, "executive_summary", ""))
+        proposal.project_plan = self._safe_text(getattr(proposal, "project_plan", ""))
+        proposal.value_proposition = self._safe_text(getattr(proposal, "value_proposition", ""))
+        proposal.company_profile = self._safe_text(getattr(proposal, "company_profile", ""))
+        proposal.support_plan = self._safe_text(getattr(proposal, "support_plan", ""))
+        proposal.terms_and_conditions = self._safe_text(getattr(proposal, "terms_and_conditions", ""))
+
+        # Build line-level commercial math sheet (client-auditable pricing logic)
+        calc_rows: list[dict] = []
+        for idx, item in enumerate(pricing.line_items, start=1):
+            qty = int(getattr(item, "quantity", 1) or 1)
+            unit = float(getattr(item, "unit_price", 0.0) or 0.0)
+            base_amount = unit * qty
+            gst_rate = float(getattr(item, "gst_rate", pricing.tax_rate) or 0.0)
+            gst_amount = float(getattr(item, "tax_amount", base_amount * gst_rate) or 0.0)
+            line_total = base_amount + gst_amount
+
+            calc_rows.append({
+                "sr_no": idx,
+                "item_name": getattr(item, "item_name", ""),
+                "description": getattr(item, "description", ""),
+                "quantity": qty,
+                "unit_price": unit,
+                "base_amount": base_amount,
+                "gst_rate": gst_rate,
+                "gst_amount": gst_amount,
+                "line_total": line_total,
+                "strategy_type": getattr(item, "strategy_type", "BASELINE"),
+                "volume_discount_pct": float(getattr(item, "volume_discount_pct", 0.0) or 0.0),
+                "volume_tier_label": getattr(item, "volume_tier_label", ""),
+                "is_unverified_estimate": bool(getattr(item, "is_unverified_estimate", False)),
+            })
+
+        # Optional value-add sheet
+        value_add_rows = []
+        for idx, va in enumerate(pricing.value_adds, start=1):
+            value_add_rows.append({
+                "sr_no": idx,
+                "item_name": getattr(va, "item_name", ""),
+                "description": getattr(va, "description", ""),
+                "delivery_cost": float(getattr(va, "value_add_delivery_cost", 0.0) or 0.0),
+                "perceived_score": int(getattr(va, "value_add_perceived_score", 0) or 0),
+            })
+
+        payment_milestones = self._default_payment_milestones()
+        assumptions = self._default_assumptions()
+        exclusions = self._default_exclusions()
+
+        template = self.template_env.get_template("quotation.html")
         context = {
+            "proposal_id": job_id.upper(),
+            "date": datetime.now().strftime("%d %b %Y"),
             "company_name": company_name,
-            "doc_id": job_id.upper(),
-            "client_name": requirements.issuing_company or "Valued Client",
-            "rfp_ref": requirements.project_name or "N/A",
-            "scope_summary": f"Proposal for {requirements.project_name}",
-            "deadline": requirements.response_deadline or "N/A",
-            "budget": _format_currency(requirements.budget_amount, pricing.currency),
-            "requirements": requirements.scope_items,
-            "is_pivot": is_pivot,
-            "rationale": pricing.strategy_summary or "Standard pricing applied.",
-            "line_items": pricing.line_items,
+            "contact_name": contact_name,
+            "contact_email": contact_email,
+            "contact_phone": contact_phone,
+            "requirements": requirements,
+            "pricing": pricing,
+            "proposal": proposal,
             "currency": pricing.currency,
-            "final_price_fmt": _format_currency(pricing.total, pricing.currency),
-            "competitor_name": comp_name,
-            "competitor_price_fmt": _format_currency(comp_price, pricing.currency),
-            "delta": delta,
-            "_format_currency": _format_currency
+            "has_value_adds": bool(pricing.value_adds),
+            "calculation_rows": calc_rows,
+            "value_add_rows": value_add_rows,
+            "payment_milestones": payment_milestones,
+            "assumptions": assumptions,
+            "exclusions": exclusions,
+            "quotation_validity_days": 30,
+            "include_internal_appendix": False,
         }
 
-        html_str = PDF_TEMPLATE.render(**context)
-        
+        html_str = template.render(**context)
+
         with open(output_path, "wb") as f:
             pisa_status = pisa.CreatePDF(html_str, dest=f)
-            
+
         if pisa_status.err:
             raise RuntimeError(f"PDF generation failed: {pisa_status.err}")
 

@@ -5,6 +5,8 @@
       "name": "1-Year Extended Warranty",
       "description": "Extends the standard manufacturer warranty by an additional 12 months, covering parts and labor.",
       "estimated_cost": 25000,
+      "delivery_cost": 12000,
+      "perceived_value_score": 8,
       "category": "hardware"
     },
     {
@@ -12,6 +14,8 @@
       "name": "6-Month Premium Support Package",
       "description": "Priority 24/7 technical support with 4-hour response SLA for 6 months.",
       "estimated_cost": 60000,
+      "delivery_cost": 35000,
+      "perceived_value_score": 9,
       "category": "service"
     },
     {
@@ -19,6 +23,8 @@
       "name": "Expedited Delivery (within 2 weeks)",
       "description": "Guaranteed hardware delivery within 2 weeks of order confirmation.",
       "estimated_cost": 15000,
+      "delivery_cost": 8000,
+      "perceived_value_score": 6,
       "category": "logistics"
     },
     {
@@ -26,6 +32,8 @@
       "name": "8 Hours Free IT Consulting",
       "description": "Complimentary 8 hours of expert IT consulting for infrastructure planning and optimization.",
       "estimated_cost": 40000,
+      "delivery_cost": 20000,
+      "perceived_value_score": 7,
       "category": "service"
     },
     {
@@ -33,6 +41,8 @@
       "name": "3-Month Proactive Monitoring",
       "description": "24/7 infrastructure monitoring with automated alerts and monthly health reports for 3 months.",
       "estimated_cost": 35000,
+      "delivery_cost": 18000,
+      "perceived_value_score": 8,
       "category": "service"
     },
     {
@@ -40,6 +50,8 @@
       "name": "1 Additional Training Day",
       "description": "An extra day of hands-on training for your IT staff covering advanced topics.",
       "estimated_cost": 30000,
+      "delivery_cost": 15000,
+      "perceived_value_score": 5,
       "category": "training"
     },
     {
@@ -47,6 +59,8 @@
       "name": "Comprehensive Documentation Package",
       "description": "Detailed network diagrams, configuration guides, runbooks, and disaster recovery procedures.",
       "estimated_cost": 20000,
+      "delivery_cost": 10000,
+      "perceived_value_score": 6,
       "category": "service"
     },
     {
@@ -54,6 +68,8 @@
       "name": "4 Quarterly Health Checks",
       "description": "On-site quarterly infrastructure health checks and performance optimization sessions for 1 year.",
       "estimated_cost": 50000,
+      "delivery_cost": 25000,
+      "perceived_value_score": 7,
       "category": "service"
     }
   ]
