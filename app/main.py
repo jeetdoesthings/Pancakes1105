@@ -8,7 +8,7 @@ with Server-Sent Events (SSE) for real-time agent reasoning.
 import asyncio
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
@@ -41,6 +41,16 @@ app.add_middleware(
 
 # Static files
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
+
+
+# ---- Utilities ----
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle date/datetime objects."""
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 # ---- Serve Frontend ----
@@ -116,11 +126,11 @@ async def stream_processing(job_id: str):
                 try:
                     msg = await asyncio.wait_for(message_queue.get(), timeout=1.0)
                     data = json.dumps({
-                        "agent": msg.agent.value if hasattr(msg.agent, 'value') else str(msg.agent),
-                        "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
+                        "agent": msg.agent.value if hasattr(msg.agent, "value") else str(msg.agent),
+                        "type": msg.message_type.value if hasattr(msg.message_type, "value") else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    }, ensure_ascii=False)
+                    }, cls=DateTimeEncoder, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     # Check if process task is done
@@ -132,11 +142,11 @@ async def stream_processing(job_id: str):
                         while not message_queue.empty():
                             msg = await message_queue.get()
                             data = json.dumps({
-                                "agent": msg.agent.value if hasattr(msg.agent, 'value') else str(msg.agent),
-                                "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
+                                "agent": msg.agent.value if hasattr(msg.agent, "value") else str(msg.agent),
+                                "type": msg.message_type.value if hasattr(msg.message_type, "value") else str(msg.message_type),
                                 "content": msg.content,
                                 "timestamp": msg.timestamp or datetime.now().isoformat(),
-                            }, ensure_ascii=False)
+                            }, cls=DateTimeEncoder, ensure_ascii=False)
                             yield f"data: {data}\n\n"
 
                         # Get job status - try multiple times with delay
@@ -158,7 +168,7 @@ async def stream_processing(job_id: str):
                                 "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
                                 "pricing_strategy": job.pricing_strategy.model_dump() if job.pricing_strategy else None,
                                 "proposal_draft": job.proposal_draft.model_dump() if job.proposal_draft else None,
-                            }, ensure_ascii=False)
+                            }, cls=DateTimeEncoder, ensure_ascii=False)
                             yield f"data: {final_data}\n\n"
                             await asyncio.sleep(1.0)
                         break
@@ -226,11 +236,11 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
                 try:
                     msg = await asyncio.wait_for(message_queue.get(), timeout=0.5)
                     data = json.dumps({
-                        "agent": msg.agent.value if hasattr(msg.agent, 'value') else str(msg.agent),
-                        "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
+                        "agent": msg.agent.value if hasattr(msg.agent, "value") else str(msg.agent),
+                        "type": msg.message_type.value if hasattr(msg.message_type, "value") else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    }, ensure_ascii=False)
+                    }, cls=DateTimeEncoder, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     if process_task.done():
@@ -246,7 +256,7 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
                             "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
                             "pricing_strategy": final_job.pricing_strategy.model_dump() if final_job.pricing_strategy else None,
                             "proposal_draft": final_job.proposal_draft.model_dump() if final_job.proposal_draft else None,
-                        }, ensure_ascii=False)
+                        }, cls=DateTimeEncoder, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
                         break
                     yield f": keepalive\n\n"
@@ -287,11 +297,11 @@ async def approve_proposal(job_id: str):
                 try:
                     msg = await asyncio.wait_for(message_queue.get(), timeout=0.5)
                     data = json.dumps({
-                        "agent": msg.agent.value if hasattr(msg.agent, 'value') else str(msg.agent),
-                        "type": msg.message_type.value if hasattr(msg.message_type, 'value') else str(msg.message_type),
+                        "agent": msg.agent.value if hasattr(msg.agent, "value") else str(msg.agent),
+                        "type": msg.message_type.value if hasattr(msg.message_type, "value") else str(msg.message_type),
                         "content": msg.content,
                         "timestamp": msg.timestamp or datetime.now().isoformat(),
-                    }, ensure_ascii=False)
+                    }, cls=DateTimeEncoder, ensure_ascii=False)
                     yield f"data: {data}\n\n"
                 except asyncio.TimeoutError:
                     if process_task.done():
@@ -305,7 +315,7 @@ async def approve_proposal(job_id: str):
                             "pdf_ready": final_job.pdf_path is not None,
                             "universal_rfp": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("universal_rfp"),
                             "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
-                        }, ensure_ascii=False)
+                        }, cls=DateTimeEncoder, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
                         break
                     yield f": keepalive\n\n"
