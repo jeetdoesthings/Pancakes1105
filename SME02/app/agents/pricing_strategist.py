@@ -249,11 +249,16 @@ class PricingStrategist:
                     recommendation=rationale
                 )
 
-                if strategy_type == "PIVOT":
+                # ── Deterministic Value-Add Trigger (Aggressive) ──
+                # Trigger if PIVOT (loss of margin), MARGIN_DEFENSE (protecting margin) 
+                # or if our final price is simply higher than the lowest competitor.
+                is_expensive = (lowest_comp > 0 and final_price > lowest_comp)
+                
+                if strategy_type in ["PIVOT", "MARGIN_DEFENSE"] or is_expensive:
                     value_differentiation_triggered = True
                     await emit(MessageType.THINKING,
-                        f"⚠️ PIVOT triggered: competitor {currency_symbol}{lowest_comp:,.2f} vs our cost {currency_symbol}{base_cost:,.2f}. "
-                        f"Adding value-add bundles."
+                        f"✨ Strategic differentiation triggered: Price {currency_symbol}{final_price:,.2f} is higher than "
+                        f"competitor {currency_symbol}{lowest_comp:,.2f}. Adding value-add bundles."
                     )
                     
                     # Select appropriate value-adds via Tool
@@ -261,7 +266,9 @@ class PricingStrategist:
                     suggested_adds = []
                     if not va_tool_resp.startswith("No "):
                         try:
-                            suggested_adds = json.loads(va_tool_resp)
+                            # Strip thinking blocks if the LLM-based tool returned any
+                            clean_json = re.sub(r"<think>.*?</think>", "", va_tool_resp, flags=re.DOTALL).strip()
+                            suggested_adds = json.loads(clean_json)
                         except Exception:
                             pass
                             
@@ -276,6 +283,8 @@ class PricingStrategist:
                             total_price=0.0,
                             is_value_add=True
                         ))
+                elif strategy_type == "MARGIN_DEFENSE":
+                    await emit(MessageType.THINKING, f"🛡️ MARGIN_DEFENSE strategy: Defending profit margin against low competitor {currency_symbol}{lowest_comp:,.2f}.")
                 elif strategy_type == "BASELINE":
                     if market_research_context:
                         await emit(MessageType.THINKING,

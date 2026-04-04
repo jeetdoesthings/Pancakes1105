@@ -135,12 +135,11 @@ class JuniorAnalyst:
         doc_tool = build_document_query_tool(job_id)
         agent_executor = create_react_agent(self.chat_llm, [doc_tool])
         
-        exploration_prompt = f"""You are the Junior Analyst. The actual text is too large to read at once. Use your document_query_tool to search the document and find the following facts systematically:
-1. Project name, issuing company, and the country where the client is based.
-2. Full list of scope items, their quantities, and descriptions/specifications.
-3. Explicit budget figure, budget currency, and the target currency expected for the proposal pricing.
-4. Key deadlines and evaluation criteria.
-5. Project timeline and submission requirements.
+        exploration_prompt = f"""You are the Junior Analyst. Use your document_query_tool to search the document and find the following facts systematically:
+1. Project name and issuing company. Keep these CONCISE (max 10 words).
+2. The country where the client is based.
+3. Full list of scope items, their quantities, and descriptions.
+4. Budget figure, currency, and submission deadlines.
 
 Additional Instructions: {additional_instructions}
 
@@ -357,15 +356,39 @@ Gather all the facts by querying the document multiple times. Finally, output a 
     @staticmethod
     def _sanitise(rfp_text: str) -> str:
         """Validate and truncate rfp_text before it touches the prompt."""
-        if not rfp_text or not rfp_text.strip():
-            raise ValueError("rfp_text must not be empty.")
-        text = rfp_text.strip()
+        text = (rfp_text or "").strip()
+        
+        # 1. Physical Presence Check
+        if not text:
+            raise ValueError("RFP content is empty.")
+            
+        # 2. Semantic "Smoke Test" (Section 7.1 Robustness)
+        # RFPs are rarely under 150 characters. If it's too short, it's likely just "hi" or "hello".
+        MIN_RFP_CHARS = 150
+        if len(text) < MIN_RFP_CHARS:
+            raise ValueError(
+                f"Input is too short to be a valid RFP document (Minimum {MIN_RFP_CHARS} chars). "
+                f"Please provide more context or a full document."
+            )
+            
+        # 3. Keyword Check (Optional but helpful)
+        keywords = ["rfp", "bid", "proposal", "scope", "requirement", "contract", "tender", "submission", "deadline"]
+        has_context = any(word in text.lower() for word in keywords)
+        if len(text) < 500 and not has_context:
+            # For short-ish documents, ensure they at least look professional
+            raise ValueError(
+                "The provided text does not appear to be a professional RFP document. "
+                "Ensure keywords like 'Scope', 'Proposal', or 'Requirements' are present."
+            )
+
+        # 4. Token Length Guard
         if len(text) > MAX_RFP_CHARS:
             logger.warning(
                 "rfp_text truncated from %d to %d chars to stay within token budget.",
                 len(text), MAX_RFP_CHARS,
             )
             text = text[:MAX_RFP_CHARS] + "\n\n[... document truncated for token budget ...]"
+            
         return text
 
     # ------------------------------------------------------------------

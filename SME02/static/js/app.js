@@ -430,10 +430,9 @@ async function onPdfReady() {
         els.downloadPdfBtn.href = blobUrl;
         els.downloadPdfBtn.setAttribute('download', filename);
         
-        // Clean up the URL object after clicking
-        els.downloadPdfBtn.onclick = () => {
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-        };
+        // No longer revoking immediately so that multiple clicks work.
+        // It will be cleaned up implicitly when the next job is started or the page reloads.
+        els.downloadPdfBtn.onclick = null;
         
         els.downloadPdfBtn.innerHTML = `
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -581,8 +580,8 @@ function populateReview() {
                         <tr>
                             <td>${item.item_name}</td>
                             <td>${item.quantity}</td>
-                            <td style="text-align:right">₹${formatNumber(item.unit_price)}</td>
-                            <td style="text-align:right">₹${formatNumber(item.total_price)}</td>
+                            <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(item.unit_price)}</td>
+                            <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(item.total_price)}</td>
                         </tr>
                     `).join('')}
                     ${(pricing.value_adds || []).map(va => `
@@ -595,15 +594,15 @@ function populateReview() {
                     `).join('')}
                     <tr class="total-row">
                         <td colspan="3"><strong>Subtotal</strong></td>
-                        <td style="text-align:right">₹${formatNumber(pricing.subtotal)}</td>
+                        <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(pricing.subtotal)}</td>
                     </tr>
                     <tr class="total-row">
-                        <td colspan="3"><strong>GST (${(pricing.tax_rate * 100).toFixed(0)}%)</strong></td>
-                        <td style="text-align:right">₹${formatNumber(pricing.tax_amount)}</td>
+                        <td colspan="3"><strong>Tax (${(pricing.tax_rate * 100).toFixed(0)}%)</strong></td>
+                        <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(pricing.tax_amount)}</td>
                     </tr>
                     <tr class="total-row">
                         <td colspan="3"><strong>TOTAL</strong></td>
-                        <td style="text-align:right"><strong>₹${formatNumber(pricing.total)}</strong></td>
+                        <td style="text-align:right"><strong>${pricing.currency_symbol || '₹'}${formatNumber(pricing.total)}</strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -626,7 +625,7 @@ function populateReview() {
                         ${pricing.competitor_analyses.map(ca => `
                             <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
                                 <strong>${ca.competitor_name}</strong> — ${ca.product_id}<br>
-                                ${ca.competitor_price > 0 ? `Their Price: ₹${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ₹${formatNumber(ca.our_price)}<br>
+                                ${ca.competitor_price > 0 ? `Their Price: ${pricing.currency_symbol || '₹'}${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ${pricing.currency_symbol || '₹'}${formatNumber(ca.our_price)}<br>
                                 <span style="color:var(--text-muted);font-size:12px">${ca.recommendation}</span>
                             </div>
                         `).join('')}

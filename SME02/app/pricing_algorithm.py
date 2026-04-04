@@ -54,12 +54,21 @@ def compute_price(
 
         if min_comp > cost:
             # ── MATCH: undercut competitor while defending margin ──
-            final_price = max(target_price, min_comp - epsilon)
-            strategy = "MATCH"
-            rationale = (
-                f"Undercutting lowest competitor ({min_comp:,.2f}) while defending "
-                f"{margin*100:.0f}% minimum margin (target={target_price:,.2f})."
-            )
+            if target_price < min_comp - epsilon:
+                final_price = min_comp - epsilon
+                strategy = "MATCH"
+                rationale = (
+                    f"Successfully undercutting lowest competitor ({min_comp:,.2f}) while maintaining "
+                    f"beyond {margin*100:.0f}% minimum margin."
+                )
+            else:
+                final_price = target_price
+                strategy = "MARGIN_DEFENSE"
+                rationale = (
+                    f"Lowest competitor ({min_comp:,.2f}) is below our target margin. "
+                    f"Defending {margin*100:.0f}% minimum margin (at {target_price:,.2f}), "
+                    f"pivoting to value-differentiation."
+                )
         else:
             # ── PIVOT: competitor below our cost — value differentiation ──
             final_price = target_price

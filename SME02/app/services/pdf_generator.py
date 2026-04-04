@@ -12,16 +12,27 @@ from xhtml2pdf import pisa
 from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 from app.config import settings
 
+# ── PDF Utils ──────────────────────────────────────────────────────────────────
+
 
 def _default_currency_symbol(currency: str) -> str:
-  symbols = {
-    "INR": "₹",
-    "USD": "$",
-    "EUR": "€",
-    "GBP": "£",
-    "JPY": "¥",
-  }
-  return symbols.get((currency or "").upper(), f"{currency} " if currency else "$")
+    """Safe fallback to text-based currency codes for PDF compatibility.
+    Standard PDF fonts (Helvetica) often lack Unicode symbols like ₹, €, £.
+    We use uppercase text codes to ensure 100% readability.
+    """
+    symbols = {
+        "INR": "Rs. ",
+        "USD": "USD ",
+        "EUR": "EUR ",
+        "GBP": "GBP ",
+        "AED": "AED ",
+        "SGD": "SGD ",
+        "JPY": "JPY ",
+        "CAD": "CAD ",
+        "AUD": "AUD ",
+    }
+    code = (currency or "").upper().strip()
+    return symbols.get(code, f"{code} " if code else "USD ")
 
 
 def _html_entity_encode(text: str) -> str:
@@ -30,12 +41,17 @@ def _html_entity_encode(text: str) -> str:
 
 
 def _format_currency(amount, currency="USD", symbol=None) -> str:
-  """Format a number as currency while preserving dynamic symbols."""
+  """Format a number as currency while preserving dynamic safe symbols."""
   try:
     val = float(amount)
-    raw_symbol = (symbol or "").strip() or _default_currency_symbol(currency)
-    safe_symbol = _html_entity_encode(raw_symbol)
-    return f"{safe_symbol}{val:,.2f}" if val % 1 else f"{safe_symbol}{val:,.0f}"
+    
+    # We prefer the text-based default symbol for PDF consistency unless specifically
+    # told to use a symbol that we know is safe (like $).
+    # To be extremely safe, we always use the text mapping for the currency code.
+    safe_symbol = _default_currency_symbol(currency)
+    
+    encoded_symbol = _html_entity_encode(safe_symbol)
+    return f"{encoded_symbol}{val:,.2f}" if val % 1 else f"{encoded_symbol}{val:,.0f}"
   except (ValueError, TypeError):
     return f"{_html_entity_encode(_default_currency_symbol(currency))}0"
 
@@ -48,6 +64,7 @@ PDF_TEMPLATE = Template("""
 <head>
 <meta charset="utf-8">
 <style>
+
   @page {
     size: a4 portrait;
     margin: 1.5cm;
@@ -234,22 +251,22 @@ PDF_TEMPLATE = Template("""
       <td style="text-align:right">{{ _format_currency(item.total_price, currency) if not item.is_value_add else 'INCLUDED' }}</td>
     </tr>
     {% endfor %}
-    <tr style="border-top:1px solid #1e3a8a; font-weight:bold">
-      <td>Subtotal</td>
-      <td style="text-align:right">{{ subtotal_fmt }}</td>
+    <tr style="border-top:1px solid #1e3a8a; background-color: #f8fafc;">
+      <td style="font-weight: bold;">Subtotal</td>
+      <td style="text-align:right; font-weight: bold;">{{ subtotal_fmt }}</td>
     </tr>
-    <tr>
+    <tr style="color: #64748b;">
       <td>{{ tax_name }} ({{ tax_pct }}%)</td>
       <td style="text-align:right">{{ tax_amount_fmt }}</td>
     </tr>
-    <tr style="background-color:#eff6ff; font-weight:bold">
-      <td>Total Investment</td>
-      <td style="text-align:right">{{ final_price_fmt }}</td>
+    <tr style="background-color:#1e3a8a; color: white; font-weight:bold">
+      <td style="font-size: 11pt;">Total Investment</td>
+      <td style="text-align:right; font-size: 11pt;">{{ final_price_fmt }}</td>
     </tr>
   </table>
 
   <!-- Market Analysis -->
-  {% if competitor_name %}
+  {% if competitor_price_fmt != 'Rs. 0' and competitor_name != 'None' %}
   <div class="section-header">Market Analysis</div>
   <table>
     <tr><td class="label-col">Primary Competitor</td><td>{{ competitor_name }}</td></tr>
@@ -300,11 +317,8 @@ class PDFGenerator:
         order = []
 
         for item in line_items or []:
-            key = (
-                (item.item_name or "").strip().lower(),
-                (item.description or "").strip().lower(),
-                bool(item.is_value_add),
-            )
+            # Group primarily by name to handle AI-generated description variance
+            key = (item.item_name or "").strip().lower()
 
             if key not in grouped:
                 grouped[key] = {
@@ -315,7 +329,10 @@ class PDFGenerator:
                 }
                 order.append(key)
             else:
+                # Merge: Add price and append unique fragments of description if needed
                 grouped[key]["total_price"] += float(item.total_price or 0)
+                if not grouped[key]["is_value_add"]:
+                    grouped[key]["is_value_add"] = bool(item.is_value_add)
 
         return [grouped[k] for k in order]
 
