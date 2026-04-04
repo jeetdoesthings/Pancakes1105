@@ -1,71 +1,46 @@
 {
-  "project_name": "GIS Implementation & Property Survey - Lalganj",
-  "currency": "INR",
-  "total_contract_value": 4880000,
-  "pricing_model": "Lumpsum with Milestone Payments",
-  "cost_breakdown": {
-    "survey_and_data_collection": {
-      "estimated_cost": 1952000,
-      "percentage_of_total": 40,
-      "description": "Door-to-door property survey, POI mapping, and ground-truthing."
+  "competitors": [
+    {
+      "name": "GeoTech Solutions Pvt Ltd",
+      "positioning": "Cost Leader",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 720000, "currency": "INR", "value_adds": []},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 380000, "currency": "INR", "value_adds": []},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 950000, "currency": "INR", "value_adds": []},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 800000, "currency": "INR", "value_adds": []},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 320000, "currency": "INR", "value_adds": []},
+        {"product_id": "MASTER_PLAN_PREP", "price": 480000, "currency": "INR", "value_adds": []},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 220000, "currency": "INR", "value_adds": []},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 150000, "currency": "INR", "value_adds": []}
+      ]
     },
-    "gis_base_map_enhancement": {
-      "estimated_cost": 732000,
-      "percentage_of_total": 15,
-      "description": "Procurement and enhancement of base maps, UAV/LiDAR survey, and digitization."
+    {
+      "name": "UrbanMap Analytics",
+      "positioning": "Balanced",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 830000, "currency": "INR", "value_adds": ["Basic dashboard templates"]},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 420000, "currency": "INR", "value_adds": ["Offline sync support"]},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 1150000, "currency": "INR", "value_adds": ["Basic terrain models"]},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 900000, "currency": "INR", "value_adds": []},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 380000, "currency": "INR", "value_adds": []},
+        {"product_id": "MASTER_PLAN_PREP", "price": 540000, "currency": "INR", "value_adds": ["Standard reports"]},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 260000, "currency": "INR", "value_adds": ["Basic SLA"]},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 180000, "currency": "INR", "value_adds": []}
+      ]
     },
-    "software_development_and_hosting": {
-      "estimated_cost": 1220000,
-      "percentage_of_total": 25,
-      "description": "Development of GIS application, property information system, and cloud hosting for 1 year."
-    },
-    "master_planning_and_analysis": {
-      "estimated_cost": 488000,
-      "percentage_of_total": 10,
-      "description": "Data analysis and preparation of the GIS-based Master Plan."
-    },
-    "handholding_and_maintenance": {
-      "estimated_cost": 488000,
-      "percentage_of_total": 10,
-      "description": "On-site support, training, and database updates for the first year."
+    {
+      "name": "InfraGeo Intelligence Corp",
+      "positioning": "Premium",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 980000, "currency": "INR", "value_adds": ["AI-based analytics layer"]},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 520000, "currency": "INR", "value_adds": ["Advanced geofencing"]},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 1350000, "currency": "INR", "value_adds": ["High-res 3D modeling"]},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 1050000, "currency": "INR", "value_adds": ["Automated validation"]},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 450000, "currency": "INR", "value_adds": ["AI-assisted digitization"]},
+        {"product_id": "MASTER_PLAN_PREP", "price": 650000, "currency": "INR", "value_adds": ["Predictive urban planning insights"]},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 350000, "currency": "INR", "value_adds": ["24/7 monitoring", "SLA guarantee"]},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 250000, "currency": "INR", "value_adds": ["Advanced training modules"]}
+      ]
     }
-  },
-  "milestone_payments": [
-    {
-      "milestone": "Inception Report",
-      "payment_percentage": 10,
-      "amount": 488000
-    },
-    {
-      "milestone": "Submission of Draft Base Maps",
-      "payment_percentage": 20,
-      "amount": 976000
-    },
-    {
-      "milestone": "Completion of Field Survey",
-      "payment_percentage": 30,
-      "amount": 1464000
-    },
-    {
-      "milestone": "Beta Launch of GIS Application",
-      "payment_percentage": 20,
-      "amount": 976000
-    },
-    {
-      "milestone": "Final Handover & Training",
-      "payment_percentage": 20,
-      "amount": 976000
-    }
-  ],
-  "tax_assumptions": {
-    "gst_rate": 0.18,
-    "gst_inclusive": true,
-    "tax_amount": 744406.78,
-    "base_value": 4135593.22
-  },
-  "competitor_benchmarking": {
-    "gyan_geomatics_est_margin": "15-20%",
-    "skylan_it_est_margin": "20-25%",
-    "market_avg_per_property_cost": "INR 150 - 250"
-  }
+  ]
 }

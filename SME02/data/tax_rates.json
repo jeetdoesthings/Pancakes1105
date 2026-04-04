@@ -1,7 +1,7 @@
 {
   "tax_rates": {
     "IN": {
-      "name": "GST (India)",
+      "name": "GST",
       "rate": 0.18,
       "components": {
         "CGST": 0.09,
@@ -9,20 +9,48 @@
       }
     },
     "US": {
-      "name": "Sales Tax (US Average)",
+      "name": "Sales Tax",
       "rate": 0.08
     },
     "UK": {
-      "name": "VAT (UK)",
+      "name": "VAT",
       "rate": 0.20
+    },
+    "AE": {
+      "name": "VAT",
+      "rate": 0.05
+    },
+    "SG": {
+      "name": "GST",
+      "rate": 0.09
+    },
+    "EU": {
+      "name": "VAT",
+      "rate": 0.21
     }
+  },
+  "currency_symbols": {
+    "INR": "₹",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "AED": "د.إ",
+    "SGD": "S$",
+    "JPY": "¥",
+    "CAD": "C$"
   },
   "currency_rates": {
     "INR": 1.0,
-    "USD": 85.50,
-    "EUR": 92.30,
-    "GBP": 107.80
+    "USD": 83.50,
+    "EUR": 90.30,
+    "GBP": 105.80,
+    "AED": 22.73,
+    "SGD": 62.15,
+    "JPY": 0.55,
+    "CAD": 61.20
   },
   "default_region": "IN",
-  "default_currency": "INR"
+  "default_currency": "INR",
+  "default_tax_rate": 0.18,
+  "default_tax_name": "Tax"
 }

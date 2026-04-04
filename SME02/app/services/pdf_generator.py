@@ -13,15 +13,31 @@ from app.models import ExtractedRequirements, PricingStrategy, ProposalDraft
 from app.config import settings
 
 
-def _format_currency(amount, currency="USD") -> str:
-    """Format a number as currency."""
-    try:
-        val = float(amount)
-        if currency == "INR":
-            return f"Rs. {val:,.0f}"
-        return f"${val:,.2f}"
-    except (ValueError, TypeError):
-        return "$0.00"
+def _default_currency_symbol(currency: str) -> str:
+  symbols = {
+    "INR": "₹",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "JPY": "¥",
+  }
+  return symbols.get((currency or "").upper(), f"{currency} " if currency else "$")
+
+
+def _html_entity_encode(text: str) -> str:
+  """Encode non-ASCII chars as HTML entities for xhtml2pdf stability."""
+  return "".join(ch if ord(ch) < 128 else f"&#{ord(ch)};" for ch in (text or ""))
+
+
+def _format_currency(amount, currency="USD", symbol=None) -> str:
+  """Format a number as currency while preserving dynamic symbols."""
+  try:
+    val = float(amount)
+    raw_symbol = (symbol or "").strip() or _default_currency_symbol(currency)
+    safe_symbol = _html_entity_encode(raw_symbol)
+    return f"{safe_symbol}{val:,.2f}" if val % 1 else f"{safe_symbol}{val:,.0f}"
+  except (ValueError, TypeError):
+    return f"{_html_entity_encode(_default_currency_symbol(currency))}0"
 
 
 # ── HTML Template ────────────────────────────────────────────────────────────────
@@ -108,6 +124,15 @@ PDF_TEMPLATE = Template("""
     font-size: 9pt;
   }
   .label-col { font-weight: bold; color: #1e3a8a; width: 30%; }
+  tr { page-break-inside: avoid; }
+
+  ul {
+    margin: 6px 0 12px 18px;
+    padding: 0;
+  }
+  li {
+    margin: 0 0 4px 0;
+  }
 
   /* ── Strategy badges ── */
   .strategy-box {
@@ -145,6 +170,10 @@ PDF_TEMPLATE = Template("""
     border-top: 1px solid #e2e8f0;
     padding-top: 8px;
   }
+
+  .page-break-before {
+    page-break-before: always;
+  }
 </style>
 </head>
 <body>
@@ -181,7 +210,7 @@ PDF_TEMPLATE = Template("""
   <div class="section-header">Key Requirements</div>
   <ul>
     {% for req in requirements[:8] %}
-    <li>{{ req.item_name }}: {{ req.description }}</li>
+    <li>{{ req.item_name }}{% if req.description %}: {{ req.description }}{% endif %}</li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -196,7 +225,7 @@ PDF_TEMPLATE = Template("""
   </div>
 
   <!-- Pricing Table -->
-  <div class="section-header">Investment Summary</div>
+  <div class="section-header page-break-before">Investment Summary</div>
   <table>
     <tr><th>Description</th><th style="text-align:right">Amount ({{ currency }})</th></tr>
     {% for item in line_items %}
@@ -205,6 +234,14 @@ PDF_TEMPLATE = Template("""
       <td style="text-align:right">{{ _format_currency(item.total_price, currency) if not item.is_value_add else 'INCLUDED' }}</td>
     </tr>
     {% endfor %}
+    <tr style="border-top:1px solid #1e3a8a; font-weight:bold">
+      <td>Subtotal</td>
+      <td style="text-align:right">{{ subtotal_fmt }}</td>
+    </tr>
+    <tr>
+      <td>{{ tax_name }} ({{ tax_pct }}%)</td>
+      <td style="text-align:right">{{ tax_amount_fmt }}</td>
+    </tr>
     <tr style="background-color:#eff6ff; font-weight:bold">
       <td>Total Investment</td>
       <td style="text-align:right">{{ final_price_fmt }}</td>
@@ -247,18 +284,40 @@ class PDFGenerator:
         self.template_env.filters["markdown"] = lambda text: markdown.markdown(text) if text else ""
 
     @staticmethod
-    def _format_currency(value, currency="INR"):
+    def _format_currency(value, currency="INR", symbol=None):
         """Format a number as currency."""
-        if currency == "INR":
-            return f"₹{value:,.0f}"
-        elif currency == "USD":
-            return f"${value:,.2f}"
-        return f"{currency} {value:,.2f}"
+        return _format_currency(value, currency, symbol)
 
     @staticmethod
     def _format_number(value):
         """Format a number with commas."""
         return f"{value:,.0f}"
+
+    @staticmethod
+    def _compact_line_items(line_items):
+        """Merge duplicate line items to keep the investment table concise."""
+        grouped = {}
+        order = []
+
+        for item in line_items or []:
+            key = (
+                (item.item_name or "").strip().lower(),
+                (item.description or "").strip().lower(),
+                bool(item.is_value_add),
+            )
+
+            if key not in grouped:
+                grouped[key] = {
+                    "item_name": item.item_name,
+                    "description": item.description,
+                    "total_price": float(item.total_price or 0),
+                    "is_value_add": bool(item.is_value_add),
+                }
+                order.append(key)
+            else:
+                grouped[key]["total_price"] += float(item.total_price or 0)
+
+        return [grouped[k] for k in order]
 
     def generate(
         self,
@@ -276,11 +335,14 @@ class PDFGenerator:
         output_path = os.path.join(settings.OUTPUT_DIR, output_filename)
 
         # Map data models to template context
-        is_pivot = any(not c.can_match for c in pricing.competitor_analyses)
+        is_pivot = pricing.is_pivot_strategy
         
         comp_name = pricing.competitor_analyses[0].competitor_name if pricing.competitor_analyses else None
         comp_price = pricing.competitor_analyses[0].competitor_price if pricing.competitor_analyses else 0
         delta = f"{abs(pricing.competitor_analyses[0].price_difference_pct):.1f}%" if pricing.competitor_analyses else "N/A"
+        
+        def fmt_curr(val, cur): return _format_currency(val, cur, pricing.currency_symbol)
+        compact_items = self._compact_line_items(pricing.line_items)
 
         context = {
             "company_name": company_name,
@@ -289,23 +351,27 @@ class PDFGenerator:
             "rfp_ref": requirements.project_name or "N/A",
             "scope_summary": f"Proposal for {requirements.project_name}",
             "deadline": requirements.response_deadline or "N/A",
-            "budget": _format_currency(requirements.budget_amount, pricing.currency),
+            "budget": fmt_curr(requirements.budget_amount, pricing.currency),
             "requirements": requirements.scope_items,
             "is_pivot": is_pivot,
             "rationale": pricing.strategy_summary or "Standard pricing applied.",
-            "line_items": pricing.line_items,
+            "line_items": compact_items,
             "currency": pricing.currency,
-            "final_price_fmt": _format_currency(pricing.total, pricing.currency),
+            "subtotal_fmt": fmt_curr(pricing.subtotal, pricing.currency),
+            "tax_name": pricing.tax_name,
+            "tax_pct": f"{pricing.tax_rate * 100:.1f}".rstrip('0').rstrip('.'),
+            "tax_amount_fmt": fmt_curr(pricing.tax_amount, pricing.currency),
+            "final_price_fmt": fmt_curr(pricing.total, pricing.currency),
             "competitor_name": comp_name,
-            "competitor_price_fmt": _format_currency(comp_price, pricing.currency),
+            "competitor_price_fmt": fmt_curr(comp_price, pricing.currency),
             "delta": delta,
-            "_format_currency": _format_currency
+            "_format_currency": fmt_curr
         }
 
         html_str = PDF_TEMPLATE.render(**context)
         
         with open(output_path, "wb") as f:
-            pisa_status = pisa.CreatePDF(html_str, dest=f)
+          pisa_status = pisa.CreatePDF(html_str, dest=f, encoding="utf-8")
             
         if pisa_status.err:
             raise RuntimeError(f"PDF generation failed: {pisa_status.err}")

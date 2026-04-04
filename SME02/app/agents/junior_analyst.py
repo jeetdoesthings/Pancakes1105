@@ -56,9 +56,9 @@ TASK
 ----
 Parse the RFP document below and return a single JSON object.
 Before writing JSON, think step-by-step (inside a <think> block) about:
-  1. What is the project and who issued it?
+  1. What is the project and who issued it, and in what country is the client located?
   2. List every scope item with its quantity and category and its features.
-  3. Is there an explicit budget figure? Convert Indian lakh notation to a plain integer.
+  3. Is there an explicit budget figure? Convert Indian lakh notation to a plain integer. What currency is expected for the quotation?
   4. What are the key deadlines, evaluation criteria, submission rules and minumum requirements?
 
 Then output ONLY the JSON (no markdown fences, no extra text).
@@ -84,7 +84,9 @@ OUTPUT FORMAT
     }}
   ],
   "budget_amount": <number — plain integer, e.g. 5000000 for ₹50,00,000; 0 if not stated>,
-  "budget_currency": "INR",
+  "budget_currency": "<string — currency code, e.g., INR, USD, GBP>",
+  "client_country_code": "<string — 2-letter ISO country code of the client, e.g., IN, US, UK, AE>",
+  "target_currency": "<string — currency code expected for the quotation, e.g., INR, USD, GBP>",
   "evaluation_criteria": ["string"],
   "project_timeline": "string",
   "submission_requirements": ["string"],
@@ -134,9 +136,9 @@ class JuniorAnalyst:
         agent_executor = create_react_agent(self.chat_llm, [doc_tool])
         
         exploration_prompt = f"""You are the Junior Analyst. The actual text is too large to read at once. Use your document_query_tool to search the document and find the following facts systematically:
-1. Project name and issuing company.
+1. Project name, issuing company, and the country where the client is based.
 2. Full list of scope items, their quantities, and descriptions/specifications.
-3. Explicit budget figure and currency if mentioned.
+3. Explicit budget figure, budget currency, and the target currency expected for the proposal pricing.
 4. Key deadlines and evaluation criteria.
 5. Project timeline and submission requirements.
 
@@ -190,6 +192,7 @@ Gather all the facts by querying the document multiple times. Finally, output a 
             f"• Client: {requirements.issuing_company}\n"
             f"• Scope Items: {len(requirements.scope_items)} items identified\n"
             f"• Budget: {requirements.budget_currency} {requirements.budget_amount:,.0f}\n"
+            f"• Region: {requirements.client_country_code} (Target Currency: {requirements.target_currency})\n"
             f"• Deadline: {requirements.response_deadline}"
         )
         for item in requirements.scope_items:
@@ -340,6 +343,8 @@ Gather all the facts by querying the document multiple times. Finally, output a 
             scope_items=scope_items,
             budget_amount=data["budget_amount"],
             budget_currency=data.get("budget_currency", "INR"),
+            client_country_code=data.get("client_country_code", "IN").upper(),
+            target_currency=data.get("target_currency", "INR").upper(),
             evaluation_criteria=data.get("evaluation_criteria", []),
             project_timeline=data.get("project_timeline", ""),
             submission_requirements=data.get("submission_requirements", []),

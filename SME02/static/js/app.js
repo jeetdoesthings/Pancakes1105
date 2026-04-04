@@ -462,13 +462,13 @@ function addFeedMessage(msg) {
     const empty = els.feedContainer.querySelector('.feed-empty');
     if (empty) empty.remove();
 
-    const agentEmoji = getAgentEmoji(msg.agent);
+    const agentIcon = getAgentIcon(msg.agent);
     const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
 
     const div = document.createElement('div');
     div.className = `feed-message type-${msg.type}`;
     div.innerHTML = `
-        <div class="feed-avatar">${agentEmoji}</div>
+        <div class="feed-avatar">${agentIcon}</div>
         <div class="feed-body">
             <div class="feed-header">
                 <span class="feed-agent-name">${msg.agent}</span>
@@ -483,15 +483,16 @@ function addFeedMessage(msg) {
     els.feedContainer.scrollTop = els.feedContainer.scrollHeight;
 }
 
-function getAgentEmoji(agent) {
+function getAgentIcon(agent) {
     const map = {
-        'Junior Analyst': '🔍',
-        'Pricing Strategist': '📊',
-        'Senior Copywriter': '✍️',
-        'Orchestrator': '🤖',
-        'PDF Generator': '📄',
+        'Junior Analyst': 'search',
+        'Pricing Strategist': 'currency_exchange',
+        'Senior Copywriter': 'stylus_fountain_pen',
+        'Orchestrator': 'smart_toy',
+        'PDF Generator': 'description',
     };
-    return map[agent] || '⚙️';
+    const icon = map[agent] || 'settings';
+    return `<span class="material-symbols-rounded">${icon}</span>`;
 }
 
 function updateAgentChips(msg) {
@@ -836,7 +837,7 @@ function startNewRfp() {
     clearFeed();
     els.feedContainer.innerHTML = `
         <div class="feed-empty">
-            <div class="feed-empty-icon">🤖</div>
+            <div class="feed-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">smart_toy</span></div>
             <p>Agent reasoning will appear here in real-time...</p>
         </div>
     `;
@@ -931,18 +932,19 @@ function closeHistory() {
 
 function getStatusIcon(status) {
     const map = {
-        'completed': '✅',
-        'error': '❌',
-        'processing': '⚙️',
-        'analyzing': '🔍',
-        'pricing': '📊',
-        'drafting': '✍️',
-        'awaiting_approval': '⏳',
-        'revising': '🔄',
-        'generating_pdf': '📄',
-        'pending': '🕐',
+        'completed': 'check_circle',
+        'error': 'cancel',
+        'processing': 'sync',
+        'analyzing': 'search',
+        'pricing': 'currency_exchange',
+        'drafting': 'stylus_fountain_pen',
+        'awaiting_approval': 'pending',
+        'revising': 'published_with_changes',
+        'generating_pdf': 'description',
+        'pending': 'schedule',
     };
-    return map[status] || '📋';
+    const icon = map[status] || 'assignment';
+    return `<span class="material-symbols-rounded">${icon}</span>`;
 }
 
 function getStatusCategory(status) {
@@ -956,7 +958,7 @@ function renderHistoryList() {
     if (state.history.length === 0) {
         els.historyList.innerHTML = `
             <div class="history-empty">
-                <div class="history-empty-icon">📋</div>
+                <div class="history-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">assignment</span></div>
                 <p>No previous RFPs yet. Process your first RFP to see it here.</p>
             </div>
         `;

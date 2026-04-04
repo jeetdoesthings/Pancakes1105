@@ -57,6 +57,7 @@ Return ONLY a valid JSON object with these sections:
 IMPORTANT:
 - Be specific and reference actual products/items from the pricing data
 - Mention value-adds naturally as part of the proposal, not as a defensive move
+{pivot_instructions}
 - For Company Profile, Support Plan, and Terms & Conditions, heavily base your content on the provided templates below:
 {templates_json}
 - Keep each section professional and concise
@@ -111,11 +112,23 @@ class SeniorCopywriter:
             "support_plan": template_filler_tool.invoke({"template_name": "support_plan", "structured_data": pricing_json})
         }
 
+        pivot_instructions = ""
+        if pricing.is_pivot_strategy:
+            pivot_instructions = (
+                "- STRATEGIC PIVOT DETECTED: The pricing strategy for this proposal focuses on "
+                "VALUE differentiation because a competitor has significantly undercut our cost. "
+                "DO NOT focus the Executive Summary or Value Proposition on being the 'most cost-effective'. "
+                "Instead, aggressively highlight our premium quality, reliability, and the bundled "
+                "value-adds (like extended warranties or premium support) included at no extra cost. "
+                "Position this as a premium, low-risk investment for the client."
+            )
+
         prompt_text = PROPOSAL_PROMPT.format(
             requirements_json=requirements_json,
             pricing_json=pricing_json,
             company_name=company_name,
-            templates_json=json.dumps(templates_data, indent=2)
+            templates_json=json.dumps(templates_data, indent=2),
+            pivot_instructions=pivot_instructions
         )
 
         if additional_instructions:

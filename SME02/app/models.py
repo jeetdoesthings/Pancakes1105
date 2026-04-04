@@ -62,6 +62,8 @@ class ExtractedRequirements(BaseModel):
     scope_items: list[ScopeItem] = []
     budget_amount: float = 0.0
     budget_currency: str = "INR"
+    client_country_code: str = "IN"  # ISO 3166-1 alpha-2 (e.g. IN, US, UK, AE)
+    target_currency: str = "INR"     # Currency the client expects the quotation in
     evaluation_criteria: list[str] = []
     project_timeline: str = ""
     submission_requirements: list[str] = []
@@ -94,13 +96,16 @@ class PricingStrategy(BaseModel):
     line_items: list[LineItem] = []
     subtotal: float = 0.0
     tax_rate: float = 0.18
+    tax_name: str = "GST"             # Dynamic tax label (GST, VAT, Sales Tax)
     tax_amount: float = 0.0
     total: float = 0.0
     currency: str = "INR"
+    currency_symbol: str = "₹"        # Dynamic currency symbol ($, £, €, ₹)
     competitor_analyses: list[CompetitorAnalysis] = []
     value_adds: list[LineItem] = []
     pricing_rationale: str = ""
     strategy_summary: str = ""
+    is_pivot_strategy: bool = False    # True when competitor undercuts our cost
 
 
 class ProposalSection(BaseModel):
