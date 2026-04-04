@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SME02 — Autonomous RFP Response Orchestrator</title>
+    <meta name="description" content="AI-powered multi-agent system for competitive RFP quotation generation. Transform RFP responses from days to minutes.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=assignment,cancel,check_circle,currency_exchange,description,pending,published_with_changes,schedule,search,settings,smart_toy,stylus_fountain_pen,sync" />
+    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+</head>
+<body>
+
+    <!-- ===== Ambient Background ===== -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+    </div>
+
+    <!-- ===== Header ===== -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M12 22V12" stroke="currentColor" stroke-width="2"/>
+                        <path d="M22 7L12 12L2 7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M2 17L12 12" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>
+                    </svg>
+                </div>
+                <span class="logo-text">SME<span class="logo-accent">02</span></span>
+            </div>
+            <nav class="nav-actions">
+                <button class="header-btn" id="newRfpHeaderBtn" title="Start New RFP">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    New RFP
+                </button>
+                <button class="header-btn" id="historyBtn" title="View History">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    History
+                </button>
+                <span class="status-badge" id="globalStatus">
+                    <span class="status-dot"></span>
+                    Ready
+                </span>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== Main Content ===== -->
+    <main class="main">
+
+        <!-- Hero Section -->
+        <section class="hero" id="heroSection">
+            <div class="hero-content">
+                <div class="hero-badge">AI-Powered Multi-Agent System</div>
+                <h1 class="hero-title">
+                    Autonomous RFP Response<br>
+                    <span class="gradient-text">&amp; Competitive Quotation</span><br>
+                    Orchestrator
+                </h1>
+                <p class="hero-subtitle">
+                    Transform RFP responses from days to minutes. Our AI agents analyze, strategize, and draft
+                    professional proposals with intelligent value-differentiation.
+                </p>
+            </div>
+        </section>
+
+        <!-- RFP Input Section -->
+        <section class="section" id="inputSection">
+            <div class="section-header">
+                <div class="section-number">01</div>
+                <div>
+                    <h2 class="section-title">Submit Your RFP</h2>
+                    <p class="section-desc">Upload a document or paste the RFP text below</p>
+                </div>
+            </div>
+
+            <div class="input-card glass-card">
+                <div class="input-meta-row">
+                    <div class="input-field-group">
+                        <label for="companyName">Your Company Name</label>
+                        <input type="text" id="companyName" value="Ering Solutions" placeholder="Your company name">
+                    </div>
+                    <div class="input-field-group">
+                        <label for="contactName">Contact Name</label>
+                        <input type="text" id="contactName" value="Sales Team" placeholder="Contact person">
+                    </div>
+                    <div class="input-field-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" value="sales@eringsolutions.com" placeholder="Email">
+                    </div>
+                </div>
+
+                <div class="input-mode-tabs" id="inputModeTabs">
+                    <button class="input-tab active" data-mode="upload">Upload File</button>
+                    <button class="input-tab" data-mode="paste">Paste Text</button>
+                </div>
+                
+                <div class="input-mode-content active" id="mode-upload">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <polyline points="9 15 12 12 15 15"></polyline>
+                            </svg>
+                        </div>
+                        <p class="drop-zone-text">Drag &amp; Drop RFP Document Here</p>
+                        <p class="drop-zone-hint">Supports .PDF, .DOCX, .TXT</p>
+                        <button class="btn-secondary drop-zone-btn" id="browseFileBtn">Browse Files</button>
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.doc" style="display:none;">
+                    </div>
+                    
+                    <div class="selected-file hidden" id="selectedFile">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name" id="fileName">document.pdf</span>
+                            <span class="file-size" id="fileSize">2.4 MB</span>
+                        </div>
+                        <button class="btn-secondary" id="removeFileBtn" style="padding:4px 8px;">✕ Remove</button>
+                    </div>
+                </div>
+
+                <div class="input-mode-content" id="mode-paste">
+                    <div class="textarea-wrapper">
+                        <textarea id="rfpInput" rows="16" placeholder="Paste your RFP document text here...
+
+Example:
+## Request for Proposal (RFP) - IT Infrastructure Upgrade
+**Issued By:** Tech Solutions Inc.
+..."></textarea>
+                        <div class="textarea-footer">
+                            <span class="char-count" id="charCount">0 characters</span>
+                            <button class="btn-secondary" id="loadExampleBtn">Load Example RFP</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="processBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Process RFP with AI Agents
+                </button>
+            </div>
+        </section>
+
+        <!-- Agent Reasoning Feed (Glass Box) -->
+        <section class="section hidden" id="agentSection">
+            <div class="section-header">
+                <div class="section-number">02</div>
+                <div>
+                    <h2 class="section-title">Agent Reasoning Feed</h2>
+                    <p class="section-desc">Watch our AI agents analyze, strategize, and draft in real-time</p>
+                </div>
+            </div>
+
+            <div class="agents-panel glass-card">
+                <!-- Agent Status Cards -->
+                <div class="agent-status-bar">
+                    <div class="agent-chip" id="chipAnalyst" data-status="waiting">
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">search</span></div>
+                        <div class="agent-chip-info">
+                            <span class="agent-chip-name">Junior Analyst</span>
+                            <span class="agent-chip-status">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="agent-connector">→</div>
+                    <div class="agent-chip" id="chipStrategist" data-status="waiting">
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">currency_exchange</span></div>
+                        <div class="agent-chip-info">
+                            <span class="agent-chip-name">Pricing Strategist</span>
+                            <span class="agent-chip-status">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="agent-connector">→</div>
+                    <div class="agent-chip" id="chipCopywriter" data-status="waiting">
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">stylus_fountain_pen</span></div>
+                        <div class="agent-chip-info">
+                            <span class="agent-chip-name">Senior Copywriter</span>
+                            <span class="agent-chip-status">Waiting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="feed-container" id="feedContainer">
+                    <div class="feed-empty">
+                        <div class="feed-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">smart_toy</span></div>
+                        <p>Agent reasoning will appear here in real-time...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Review & Approve Section -->
+        <section class="section hidden" id="reviewSection">
+            <div class="section-header">
+                <div class="section-number">03</div>
+                <div>
+                    <h2 class="section-title">Review &amp; Approve</h2>
+                    <p class="section-desc">Review the generated proposal and provide feedback before final PDF generation</p>
+                </div>
+            </div>
+
+            <div class="review-panel glass-card">
+                <!-- Tabs -->
+                <div class="review-tabs" id="reviewTabs">
+                    <button class="review-tab active" data-tab="requirements">Requirements</button>
+                    <button class="review-tab" data-tab="pricing">Pricing</button>
+                    <button class="review-tab" data-tab="proposal">Proposal</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="review-content" id="reviewContent">
+                    <div class="review-tab-content active" id="tab-requirements"></div>
+                    <div class="review-tab-content" id="tab-pricing"></div>
+                    <div class="review-tab-content" id="tab-proposal"></div>
+                </div>
+
+                <!-- Feedback Area -->
+                <div class="feedback-area">
+                    <h3>Request Changes</h3>
+                    <p class="feedback-hint">Specify which agent should make changes and describe the modification.</p>
+
+                    <div class="changes-list" id="changesList"></div>
+
+                    <div class="add-change-form">
+                        <select id="changeAgent">
+                            <option value="Junior Analyst">Junior Analyst (Requirements)</option>
+                            <option value="Pricing Strategist">Pricing Strategist (Pricing)</option>
+                            <option value="Senior Copywriter">Senior Copywriter (Content)</option>
+                        </select>
+                        <input type="text" id="changeInstruction" placeholder="Describe the change you want...">
+                        <button class="btn-secondary" id="addChangeBtn">+ Add Change</button>
+                    </div>
+
+                    <div class="review-actions">
+                        <button class="btn-primary" id="approveBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Approve &amp; Generate PDF
+                        </button>
+                        <button class="btn-outline" id="submitChangesBtn" style="display:none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Submit Changes &amp; Re-run Agents
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PDF Download Section -->
+        <section class="section hidden" id="downloadSection">
+            <div class="section-header">
+                <div class="section-number">04</div>
+                <div>
+                    <h2 class="section-title">Your Quotation is Ready</h2>
+                    <p class="section-desc">Download your boardroom-ready professional PDF quotation</p>
+                </div>
+            </div>
+
+            <div class="download-card glass-card">
+                <div class="download-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <polyline points="9 15 12 18 15 15"/>
+                    </svg>
+                </div>
+                <h3>SME02 Professional Quotation</h3>
+                <p class="download-meta" id="downloadMeta">Generated with AI-powered analysis</p>
+                <a class="btn-primary download-btn" id="downloadPdfBtn" href="#">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download PDF Quotation
+                </a>
+                <button class="btn-new-rfp" id="newRfpBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Start New RFP
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>SME02 — Autonomous RFP Response & Competitive Quotation Orchestrator</p>
+        <p class="footer-sub">Built with FastAPI, LangChain, Ollama, and WeasyPrint</p>
+    </footer>
+
+    <!-- ===== History Modal ===== -->
+    <div class="modal-overlay hidden" id="historyModal">
+        <div class="modal-panel glass-card">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    RFP History
+                </h2>
+                <button class="modal-close" id="closeHistoryBtn">&times;</button>
+            </div>
+            <div class="modal-body" id="historyList">
+                <div class="history-empty">
+                    <div class="history-empty-icon">📋</div>
+                    <p>No previous RFPs yet. Process your first RFP to see it here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=1.1"></script>
+</body>
+</html>

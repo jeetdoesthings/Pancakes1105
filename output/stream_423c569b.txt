@@ -1,0 +1,178 @@
+data: {"agent": "Orchestrator", "type": "status", "content": "🚀 Initiating RFP processing pipeline...", "timestamp": "2026-04-04T04:46:59.546971"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Junior Analyst agent for RFP document parsing...", "timestamp": "2026-04-04T04:46:59.546971"}
+
+data: {"agent": "Junior Analyst", "type": "status", "content": "Starting Hierarchical RAG document analysis...", "timestamp": "2026-04-04T04:46:59.546971"}
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Equipping tools to query the Vector Storage for specific sections...", "timestamp": "2026-04-04T04:46:59.546971"}
+
+data: {"agent": "Junior Analyst", "type": "action", "content": "Executing multi-step queries against the RFP Knowledge Base...", "timestamp": "2026-04-04T04:46:59.553160"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "RAG exploration complete. Extracting final structured JSON...", "timestamp": "2026-04-04T04:47:04.878468"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Validating and normalising extracted data...", "timestamp": "2026-04-04T04:47:08.762979"}
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Low-confidence fields flagged for human review: date_issued, evaluation_criteria, project_timeline, submission_requirements, additional_notes", "timestamp": "2026-04-04T04:47:08.762979"}
+
+data: {"agent": "Junior Analyst", "type": "result", "content": "Successfully extracted requirements:\n• Project: Supply of HB Grade Pencils\n• Client: Johnson and Associates, New York, USA\n• Scope Items: 1 items identified\n• Budget: USD 2,000\n• Deadline: 2026-05-01", "timestamp": "2026-04-04T04:47:08.762979"}
+
+data: {"agent": "Junior Analyst", "type": "action", "content": "Identified → HB Grade Pencils (Qty: 500, Category: hardware)", "timestamp": "2026-04-04T04:47:08.762979"}
+
+data: {"agent": "Junior Analyst", "type": "complete", "content": "RFP analysis complete. Awaiting human review before handoff.", "timestamp": "2026-04-04T04:47:08.762979"}
+
+data: {"agent": "Orchestrator", "type": "result", "content": "✅ UniversalRFP schema populated: rfpId=423c569b, title='Supply of HB Grade Pencils', products='HB Grade Pencils...', currency=USD", "timestamp": "2026-04-04T04:47:08.769079"}
+
+data: {"agent": "Orchestrator", "type": "status", "content": "🔍 No similar historical RFPs found in database. Proceeding with fresh analysis.", "timestamp": "2026-04-04T04:47:09.875294"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Pricing Strategist agent for competitive analysis & dynamic market research...", "timestamp": "2026-04-04T04:47:10.159235"}
+
+data: {"agent": "Pricing Strategist", "type": "status", "content": "Starting competitive pricing analysis...", "timestamp": "2026-04-04T04:47:10.159235"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "Analyzing 1 scope items against internal pricing catalog and competitor data...", "timestamp": "2026-04-04T04:47:10.159235"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "Analyzing pricing for: HB Grade Pencils (Qty: 500)...", "timestamp": "2026-04-04T04:47:10.159235"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "Matched 'HB Grade Pencils' to internal product 'HB Grade Pencils' (Base Cost: ₹80, Standard Price: ₹150)", "timestamp": "2026-04-04T04:47:10.160236"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "Found market benchmarks for HB Grade Pencils.", "timestamp": "2026-04-04T04:47:10.161236"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "Using Market Research for 'HB Grade Pencils'", "timestamp": "2026-04-04T04:47:10.161236"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "📐 ALGORITHM DECISION for 'HB Grade Pencils':\n  INPUT: cost=₹80, competitors=[], margin=25%\n  DECISION: No competitor data → BASELINE\n  OUTPUT: ₹100 (target margin pricing)", "timestamp": "2026-04-04T04:47:10.161236"}
+
+data: {"agent": "Pricing Strategist", "type": "result", "content": "Pricing Summary:\n• Subtotal: ₹75,000\n• GST (18%): ₹13,500\n• Total: ₹88,500\n• Value-Adds Included: 0 items (at no extra cost)", "timestamp": "2026-04-04T04:47:10.161236"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "Generating strategic pricing rationale using AI analysis...", "timestamp": "2026-04-04T04:47:10.161236"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Pricing Strategist", "type": "complete", "content": "Pricing analysis and competitive strategy complete.", "timestamp": "2026-04-04T04:47:15.427065"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Senior Copywriter agent for proposal drafting...", "timestamp": "2026-04-04T04:47:15.428065"}
+
+data: {"agent": "Senior Copywriter", "type": "status", "content": "Starting professional proposal drafting...", "timestamp": "2026-04-04T04:47:15.428065"}
+
+data: {"agent": "Senior Copywriter", "type": "thinking", "content": "Preparing to draft proposal for Johnson and Associates, New York, USA's 'Supply of HB Grade Pencils' project. Incorporating pricing strategy and 0 value-add recommendations...", "timestamp": "2026-04-04T04:47:15.428065"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Drafting Executive Summary and introduction...", "timestamp": "2026-04-04T04:47:15.429065"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Composing Technical Proposal sections for each deliverable...", "timestamp": "2026-04-04T04:47:15.429065"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Writing Value Proposition with competitive differentiation...", "timestamp": "2026-04-04T04:47:15.429065"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Senior Copywriter", "type": "thinking", "content": "Processing and structuring the draft content...", "timestamp": "2026-04-04T04:47:29.717249"}
+
+data: {"agent": "Senior Copywriter", "type": "result", "content": "Proposal draft complete:\n• Executive Summary: ✓\n• Technical Sections: 1 sections\n• Project Plan: ✓\n• Value Proposition: ✓\n• Company Profile: ✓\n• Support Plan: ✓\n• Terms & Conditions: ✓", "timestamp": "2026-04-04T04:47:29.717249"}
+
+data: {"agent": "Senior Copywriter", "type": "complete", "content": "Professional proposal draft finalized and ready for review.", "timestamp": "2026-04-04T04:47:29.717249"}
+
+data: {"agent": "Orchestrator", "type": "status", "content": "✅ All agents have completed their work. Proposal is ready for your review and approval.", "timestamp": "2026-04-04T04:47:29.717249"}
+

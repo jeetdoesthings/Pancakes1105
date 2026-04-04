@@ -1,22 +1,47 @@
+# SME02 - AI Orchestrator Gitignore
+
+# Local Environment
+.env
+*.env
+.env.*
+
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
-SME02/venv/
-venv/
+# Dynamic Output
+pdf_output/
+*.pdf
 
-# Environment files
-.env
-SME02/.env
+# Local Data
+sqlite_db/
+*.db
+*.sqlite3
 
-# Salesforce tooling
-.sfdx/
-
-# Editor/IDE
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Mac
+# MacOS
 .DS_Store

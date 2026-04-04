@@ -1,0 +1,46 @@
+{
+  "competitors": [
+    {
+      "name": "GeoTech Solutions Pvt Ltd",
+      "positioning": "Cost Leader",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 720000, "currency": "INR", "value_adds": []},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 380000, "currency": "INR", "value_adds": []},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 950000, "currency": "INR", "value_adds": []},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 800000, "currency": "INR", "value_adds": []},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 320000, "currency": "INR", "value_adds": []},
+        {"product_id": "MASTER_PLAN_PREP", "price": 480000, "currency": "INR", "value_adds": []},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 220000, "currency": "INR", "value_adds": []},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 150000, "currency": "INR", "value_adds": []}
+      ]
+    },
+    {
+      "name": "UrbanMap Analytics",
+      "positioning": "Balanced",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 830000, "currency": "INR", "value_adds": ["Basic dashboard templates"]},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 420000, "currency": "INR", "value_adds": ["Offline sync support"]},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 1150000, "currency": "INR", "value_adds": ["Basic terrain models"]},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 900000, "currency": "INR", "value_adds": []},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 380000, "currency": "INR", "value_adds": []},
+        {"product_id": "MASTER_PLAN_PREP", "price": 540000, "currency": "INR", "value_adds": ["Standard reports"]},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 260000, "currency": "INR", "value_adds": ["Basic SLA"]},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 180000, "currency": "INR", "value_adds": []}
+      ]
+    },
+    {
+      "name": "InfraGeo Intelligence Corp",
+      "positioning": "Premium",
+      "offerings": [
+        {"product_id": "GIS_APP_DEV_CUSTOM", "price": 980000, "currency": "INR", "value_adds": ["AI-based analytics layer"]},
+        {"product_id": "MOBILE_APP_FIELD_DATA", "price": 520000, "currency": "INR", "value_adds": ["Advanced geofencing"]},
+        {"product_id": "UAV_LIDAR_SURVEY", "price": 1350000, "currency": "INR", "value_adds": ["High-res 3D modeling"]},
+        {"product_id": "PROPERTY_POI_MAPPING", "price": 1050000, "currency": "INR", "value_adds": ["Automated validation"]},
+        {"product_id": "BASE_MAP_DIGITIZATION", "price": 450000, "currency": "INR", "value_adds": ["AI-assisted digitization"]},
+        {"product_id": "MASTER_PLAN_PREP", "price": 650000, "currency": "INR", "value_adds": ["Predictive urban planning insights"]},
+        {"product_id": "CLOUD_HOSTING_MAINT", "price": 350000, "currency": "INR", "value_adds": ["24/7 monitoring", "SLA guarantee"]},
+        {"product_id": "STAFF_WORKSHOPS_TRAINING", "price": 250000, "currency": "INR", "value_adds": ["Advanced training modules"]}
+      ]
+    }
+  ]
+}
