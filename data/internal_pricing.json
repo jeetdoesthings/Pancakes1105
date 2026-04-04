@@ -79,26 +79,6 @@
       "description": "Capacity building workshops and hands-on training for Nagar Panchayat staff on using the GIS dashboard and mobile app.",
       "base_cost": 160000.0,
       "currency": "INR"
-    },
-    {
-      "id": "PENCIL_HB_GRADE",
-      "name": "HB Grade Pencils",
-      "category": "stationery",
-      "standard_price": 150,
-      "min_margin_percent": 0.25,
-      "description": "Standard HB grade pencils with hexagonal barrel and eraser tip. IS 1986 compliant.",
-      "base_cost": 80.0,
-      "currency": "INR"
-    },
-    {
-      "id": "STATIONERY_BULK_SUPPLY",
-      "name": "Bulk Stationery Supply Service",
-      "category": "service",
-      "standard_price": 50000,
-      "min_margin_percent": 0.2,
-      "description": "Bulk procurement and delivery service for office and school stationery supplies.",
-      "base_cost": 35000.0,
-      "currency": "INR"
     }
   ]
 }

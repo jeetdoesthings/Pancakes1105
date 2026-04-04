@@ -32,6 +32,9 @@ def search_rfps(query: str = "", product: str = "") -> List[UniversalRFP]:
         rows = cursor.fetchall()
         
         for row in rows:
-            results.append(UniversalRFP(**dict(row)))
+            data = dict(row)
+            if data.get("productName") and len(data["productName"]) > 95:
+                data["productName"] = data["productName"][:92] + "..."
+            results.append(UniversalRFP(**data))
             
     return results

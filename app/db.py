@@ -92,7 +92,10 @@ def get_rfp_by_id(rfp_id: str) -> Optional[UniversalRFP]:
         cursor.execute("SELECT * FROM rfps WHERE rfpId = ?", (rfp_id,))
         row = cursor.fetchone()
         if row:
-            return UniversalRFP(**dict(row))
+            data = dict(row)
+            if data.get("productName") and len(data["productName"]) > 95:
+                data["productName"] = data["productName"][:92] + "..."
+            return UniversalRFP(**data)
         return None
 
 # Initialize upon import

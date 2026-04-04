@@ -111,6 +111,8 @@ class Orchestrator:
                 status=state_values.get("status", JobStatus.PENDING),
                 rfp_input=state_values.get("rfp_input"),
                 extracted_requirements=state_values.get("extracted_requirements"),
+                universal_rfp=state_values.get("universal_rfp"),
+                similar_rfps=state_values.get("similar_rfps"),
                 pricing_strategy=state_values.get("pricing_strategy"),
                 proposal_draft=state_values.get("proposal_draft"),
                 pdf_path=state_values.get("pdf_path"),
@@ -222,10 +224,14 @@ class Orchestrator:
         except (ValueError, TypeError):
             deadline_date = date.today()
 
+        product_name = ", ".join([s.item_name for s in requirements.scope_items]) if requirements.scope_items else "N/A"
+        # Aggressively truncate to stay within UniversalRFP.max_length=100
+        product_name = product_name[:80].strip()
+
         universal_rfp = UniversalRFP(
             rfpId=state["job_id"],
             title=requirements.project_name or "Untitled RFP",
-            productName=", ".join([s.item_name for s in requirements.scope_items]) if requirements.scope_items else "N/A",
+            productName=product_name,
             category=requirements.scope_items[0].category if requirements.scope_items else None,
             quantity=sum(s.quantity for s in requirements.scope_items) if requirements.scope_items else 1,
             unit="service",
@@ -236,6 +242,7 @@ class Orchestrator:
             location=None,
             description=requirements.additional_notes or "",
         )
+        print(f"[DEBUG] universal_rfp built: {universal_rfp.rfpId} | {universal_rfp.title} | productName={universal_rfp.productName}")
 
         await emit(AgentMessage(
             agent=AgentRole.ORCHESTRATOR,
@@ -247,6 +254,7 @@ class Orchestrator:
         # ── Similar RFP Retrieval ──
         from app.services.rfp_similarity import rfp_similarity_service
         similar_rfps = rfp_similarity_service.find_similar_rfps(universal_rfp, k=3)
+        print(f"[DEBUG] similar_rfps found: {len(similar_rfps)}")
 
         if similar_rfps:
             await emit(AgentMessage(

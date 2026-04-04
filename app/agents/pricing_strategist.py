@@ -1,12 +1,18 @@
 """
-Pricing Strategist Agent
-========================
-Analyzes internal pricing, competitor data, and applies intelligent
-value-differentiation strategy. This is the core differentiator.
+Pricing Strategist Agent (Merged v3)
+=====================================
+Combines the best of all three codebases:
+- Real-time FX conversion via Frankfurter API (from SME02-Old)
+- Country-code tax lookup with live search fallback (from SME02-Old)
+- Currency symbol rendering throughout (from SME02-Old)
+- Aggressive PIVOT triggering when we're more expensive (from SME02-Old)
+- Similar RFP intelligence injection (from current SME02)
+- Algorithm Decision Log fields (from current SME02)
 """
 
 import json
 import os
+import re
 from typing import Callable, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
@@ -20,6 +26,8 @@ from app.tools.pricing_tools import (
     get_competitor_data_tool,
     research_market_rates_tool,
     suggest_value_add_tool,
+    get_currency_conversion_tool,
+    get_tax_rate_tool,
     _load_json
 )
 from app.pricing_algorithm import compute_price
@@ -66,6 +74,13 @@ Return ONLY a JSON object:
 Return ONLY the JSON, no other text.""")
 
 
+# Currency symbol map
+CURRENCY_SYMBOLS = {
+    "USD": "$", "EUR": "€", "GBP": "£", "INR": "₹",
+    "AED": "د.إ", "SGD": "S$", "JPY": "¥", "AUD": "A$",
+}
+
+
 class PricingStrategist:
     """Analyzes pricing, competitors, and applies value-differentiation."""
 
@@ -108,23 +123,100 @@ class PricingStrategist:
                 f"📚 Incorporating intelligence from {len(similar_rfps)} similar historical RFPs "
                 f"to inform pricing benchmarks and strategy."
             )
+
+        # ── 1. Currency Detection & Conversion ──
+        # Use target_currency if set, otherwise fall back to budget_currency from RFP
+        target_curr = requirements.target_currency if requirements.target_currency else requirements.budget_currency
+        if not target_curr or target_curr == "INR":
+            target_curr = "INR"
+
+        # Detect country code from issuing company name/location
+        country_code = requirements.client_country_code or "IN"
+        issuing_company = (requirements.issuing_company or "").lower()
+        # Simple heuristic for country detection from company name/location
+        if any(kw in issuing_company for kw in ["uk", "london", "british", "england"]):
+            country_code = "UK"
+            if target_curr == "INR":
+                target_curr = "GBP"
+        elif any(kw in issuing_company for kw in ["us", "usa", "america", "new york", "california"]):
+            country_code = "US"
+            if target_curr == "INR":
+                target_curr = "USD"
+        elif any(kw in issuing_company for kw in ["uae", "dubai", "abu dhabi"]):
+            country_code = "AE"
+            if target_curr == "INR":
+                target_curr = "AED"
+        elif any(kw in issuing_company for kw in ["singapore"]):
+            country_code = "SG"
+            if target_curr == "INR":
+                target_curr = "SGD"
+        elif any(kw in issuing_company for kw in ["euro", "germany", "france", "spain", "italy"]):
+            country_code = "EU"
+            if target_curr == "INR":
+                target_curr = "EUR"
+
+        # Detect currency from additional_instructions
+        instr_lower = additional_instructions.lower()
+        currency_map = {
+            "usd": "USD", "dollar": "USD", "$": "USD",
+            "eur": "EUR", "euro": "EUR", "€": "EUR",
+            "gbp": "GBP", "pound": "GBP", "£": "GBP",
+            "aed": "AED", "dirham": "AED",
+            "sgd": "SGD", "singapore": "SGD",
+            "inr": "INR", "rupee": "INR", "₹": "INR",
+        }
+        for kw, code in currency_map.items():
+            if kw in instr_lower:
+                target_curr = code
+                await emit(MessageType.STATUS, f"Detected currency override in instructions: {target_curr}")
+                break
+
+        currency_symbol = CURRENCY_SYMBOLS.get(target_curr, target_curr if target_curr != "INR" else "₹")
+        currency_rate = 1.0
+
+        if target_curr != "INR":
+            await emit(MessageType.THINKING, f"Target currency is {target_curr}. Looking up REAL-TIME exchange rate...")
+            conv_resp = get_currency_conversion_tool.invoke({"base_currency": "INR", "target_currency": target_curr})
+            await emit(MessageType.ACTION, f"Currency Conversion: {conv_resp}")
+
+            # Parse rate from response
+            match = re.search(r"(?:Rate:|REAL-TIME Rate:.*?=)\s*([\d.]+)", conv_resp)
+            if match:
+                currency_rate = float(match.group(1))
+            else:
+                numbers = re.findall(r"[\d.]+", conv_resp)
+                if len(numbers) >= 1:
+                    currency_rate = float(numbers[-1])
+
+        # ── 2. Tax Detection via Country Code ──
+        tax_info_str = get_tax_rate_tool.invoke(country_code)
+        try:
+            tax_info = json.loads(tax_info_str)
+        except Exception:
+            tax_info = {"name": "Tax", "rate": 0.18}
+        tax_name = tax_info.get("name", "Tax")
+        tax_rate = tax_info.get("rate", 0.18)
+
+        await emit(MessageType.RESULT,
+            f"Tax regime detected: {tax_name} ({tax_rate*100:.0f}%) for country code '{country_code}'"
+        )
+
         await emit(MessageType.THINKING, f"Analyzing {len(requirements.scope_items)} scope items against internal pricing catalog and competitor data...")
 
         line_items = []
         value_add_items = []
+        value_add_names_seen = set()  # Track to prevent duplicates
         competitor_analyses = []
         analysis_details = []
         value_differentiation_triggered = False
-        benchmarks_used = False
 
-        # Process each scope item
+        # ── 3. Process Each Scope Item ──
         for scope_item in requirements.scope_items:
             await emit(MessageType.ACTION, f"Analyzing pricing for: {scope_item.item_name} (Qty: {scope_item.quantity})...")
 
             # Product Normalization Layer — fuzzy match to internal catalog
             product = normalize_product_name(scope_item.item_name)
             if not product:
-                # Fallback: try the keyword tool for broader matching
                 internal_tool_response = get_internal_pricing_tool.invoke(scope_item.item_name)
                 if not internal_tool_response.startswith("No "):
                     try:
@@ -135,13 +227,14 @@ class PricingStrategist:
                         pass
 
             if product:
-                unit_price = product["standard_price"]
-                base_cost = product["base_cost"]
+                # Convert to target currency
+                base_cost = product["base_cost"] * currency_rate
+                unit_price = product["standard_price"] * currency_rate
                 total_price = unit_price * scope_item.quantity
 
                 await emit(MessageType.THINKING,
                     f"Matched '{scope_item.item_name}' to internal product '{product['name']}' "
-                    f"(Base Cost: ₹{base_cost:,.0f}, Standard Price: ₹{unit_price:,.0f})"
+                    f"(Base Cost: {currency_symbol}{base_cost:,.2f}, Standard Price: {currency_symbol}{unit_price:,.2f})"
                 )
 
                 line_items.append(LineItem(
@@ -159,56 +252,48 @@ class PricingStrategist:
 
                 if not comp_tool_response.startswith("No "):
                     if comp_tool_response.startswith("Market Benchmarks:"):
-                        # Competitor data file has benchmark summaries, not per-product prices
                         market_research_context = comp_tool_response
-                        benchmarks_used = True
                         await emit(MessageType.ACTION, f"Found market benchmarks for {product['name']}.")
                     else:
-                        # Old structure: actual competitor prices
                         try:
                             comp_prices = json.loads(comp_tool_response)
                         except Exception:
                             market_research_context = comp_tool_response
                 else:
-                    # No local data at all - perform live search
                     search_query = f"cost of {product['name']} in India"
                     await emit(MessageType.ACTION, f"No local competitor data. Performing live market research for: {product['name']}...")
                     live_res = research_market_rates_tool.invoke(search_query)
                     if live_res:
                         market_research_context = live_res
 
-                comp_prices_floats = [c["price"] for c in comp_prices]
-                
+                # Convert competitor prices to target currency
+                comp_prices_floats = [c["price"] * currency_rate for c in comp_prices]
+
                 # Deterministic pricing algorithm (MATCH / PIVOT / BASELINE)
                 final_price, strategy_type, rationale = compute_price(
                     cost=base_cost,
                     competitor_prices=comp_prices_floats,
                     margin=product["min_margin_percent"],
-                    budget=requirements.budget_amount if requirements.budget_amount > 0 else None,
+                    budget=(requirements.budget_amount * currency_rate) if requirements.budget_amount > 0 else None,
                 )
-                
+
                 unit_price = final_price
                 can_match = (strategy_type == "MATCH")
-                
-                # We record the lowest comp price for analysis display
                 lowest_comp = min(comp_prices_floats) if comp_prices_floats else 0.0
 
                 display_comp_name = "Unknown"
                 if comp_prices:
                     display_comp_name = ", ".join([c.get("competitor_name", c.get("competitor", "Unknown")) for c in comp_prices])
                 elif market_research_context:
-                    if "Local Benchmarks:" in market_research_context:
-                        display_comp_name = "Market Benchmarks"
-                    else:
-                        display_comp_name = "Live Web Research"
+                    display_comp_name = "Market Benchmarks"
 
                 # Build algorithm decision threshold description
                 if comp_prices_floats:
                     min_comp = min(comp_prices_floats)
                     if min_comp > base_cost:
-                        threshold_desc = f"min_competitor({min_comp:,.0f}) > cost({base_cost:,.0f}) → MATCH (undercut while defending margin)"
+                        threshold_desc = f"min_competitor({currency_symbol}{min_comp:,.2f}) > cost({currency_symbol}{base_cost:,.2f}) → MATCH (undercut while defending margin)"
                     else:
-                        threshold_desc = f"min_competitor({min_comp:,.0f}) ≤ cost({base_cost:,.0f}) → PIVOT (value-add bundle triggered)"
+                        threshold_desc = f"min_competitor({currency_symbol}{min_comp:,.2f}) ≤ cost({currency_symbol}{base_cost:,.2f}) → PIVOT (value-add bundle triggered)"
                 else:
                     threshold_desc = f"No competitor data → BASELINE (target margin {product.get('min_margin_percent', 0.3)*100:.0f}%)"
 
@@ -218,7 +303,7 @@ class PricingStrategist:
                     competitor_price=lowest_comp,
                     our_price=final_price,
                     price_difference=final_price - lowest_comp,
-                    price_difference_pct=((final_price - lowest_comp) / final_price) * 100 if final_price > 0 else 0,
+                    price_difference_pct=((final_price - lowest_comp) / lowest_comp * 100) if lowest_comp > 0 else 0,
                     can_match=can_match,
                     recommendation=rationale,
                     # Algorithm Decision Log
@@ -231,78 +316,114 @@ class PricingStrategist:
                     algorithm_output_rationale=rationale,
                 )
 
+                # ── Aggressive Value-Add Trigger (from SME02-Old) ──
+                # Trigger if PIVOT, or if our final price is simply higher than the lowest competitor
+                is_expensive = (lowest_comp > 0 and final_price > lowest_comp)
+
                 if strategy_type == "PIVOT":
+                    value_differentiation_triggered = True
                     await emit(MessageType.THINKING,
-                        f"⚠️ PIVOT triggered: competitor ₹{lowest_comp:,.0f} vs our cost ₹{base_cost:,.0f}. "
+                        f"⚠️ PIVOT triggered: competitor {currency_symbol}{lowest_comp:,.2f} vs our cost {currency_symbol}{base_cost:,.2f}. "
                         f"Adding value-add bundles."
                     )
                     await emit(MessageType.ACTION,
                         f"📐 ALGORITHM DECISION for '{product['name']}':\n"
-                        f"  INPUT: cost=₹{base_cost:,.0f}, competitors=[₹{', ₹'.join(f'{p:,.0f}' for p in comp_prices_floats)}], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
-                        f"  DECISION: min_competitor(₹{lowest_comp:,.0f}) ≤ cost(₹{base_cost:,.0f}) → PIVOT\n"
-                        f"  OUTPUT: ₹{final_price:,.0f} (target margin preserved, value-adds compensate)"
+                        f"  INPUT: cost={currency_symbol}{base_cost:,.2f}, competitors=[{', '.join(f'{currency_symbol}{p:,.2f}' for p in comp_prices_floats)}], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
+                        f"  DECISION: min_competitor({currency_symbol}{lowest_comp:,.2f}) ≤ cost({currency_symbol}{base_cost:,.2f}) → PIVOT\n"
+                        f"  OUTPUT: {currency_symbol}{final_price:,.2f} (target margin preserved, value-adds compensate)"
                     )
-                    
-                    # Select appropriate value-adds via Tool
+
                     va_tool_resp = suggest_value_add_tool.invoke(product["category"])
                     suggested_adds = []
                     if not va_tool_resp.startswith("No "):
                         try:
-                            suggested_adds = json.loads(va_tool_resp)
+                            clean_json = re.sub(r"<think>.*?</think>", "", va_tool_resp, flags=re.DOTALL).strip()
+                            suggested_adds = json.loads(clean_json)
                         except Exception:
                             pass
-                            
+
                     analysis.recommendation += " Adding value-add bundles to compensate."
                     for va in suggested_adds:
-                        analysis.value_adds_suggested.append(va["name"])
-                        est_cost = va.get("estimated_cost", 0)
-                        value_add_items.append(LineItem(
-                            item_name=va["name"],
-                            description=va["description"],
-                            quantity=1,
-                            unit_price=est_cost,  # Market value (shown as INCLUDED in PDF)
-                            total_price=est_cost,
-                            is_value_add=True
-                        ))
+                        if va["name"] not in value_add_names_seen:
+                            value_add_names_seen.add(va["name"])
+                            analysis.value_adds_suggested.append(va["name"])
+                            est_cost = va.get("estimated_cost", 0)
+                            value_add_items.append(LineItem(
+                                item_name=va["name"],
+                                description=va["description"],
+                                quantity=1,
+                                unit_price=est_cost,
+                                total_price=est_cost,
+                                is_value_add=True
+                            ))
+                elif is_expensive:
+                    # Aggressive PIVOT: we're more expensive, so add value-adds
+                    value_differentiation_triggered = True
+                    await emit(MessageType.THINKING,
+                        f"✨ Strategic differentiation: Our price {currency_symbol}{final_price:,.2f} is higher than "
+                        f"competitor {currency_symbol}{lowest_comp:,.2f}. Adding value-add bundles."
+                    )
+
+                    va_tool_resp = suggest_value_add_tool.invoke(product["category"])
+                    suggested_adds = []
+                    if not va_tool_resp.startswith("No "):
+                        try:
+                            clean_json = re.sub(r"<think>.*?</think>", "", va_tool_resp, flags=re.DOTALL).strip()
+                            suggested_adds = json.loads(clean_json)
+                        except Exception:
+                            pass
+
+                    analysis.recommendation += " Adding value-add bundles to differentiate."
+                    for va in suggested_adds:
+                        if va["name"] not in value_add_names_seen:
+                            value_add_names_seen.add(va["name"])
+                            analysis.value_adds_suggested.append(va["name"])
+                            est_cost = va.get("estimated_cost", 0)
+                            value_add_items.append(LineItem(
+                                item_name=va["name"],
+                                description=va["description"],
+                                quantity=1,
+                                unit_price=est_cost,
+                                total_price=est_cost,
+                                is_value_add=True
+                            ))
                 elif strategy_type == "BASELINE":
                     if market_research_context:
                         await emit(MessageType.THINKING,
                             f"Using Market Research for '{product['name']}'"
                         )
-                        # Don't set per-item recommendation — will add single summary line at end
                         analysis.recommendation = f"Pricing aligned with market benchmarks."
                     else:
                         await emit(MessageType.THINKING,
                             f"No competitor data for '{product['name']}'. Using BASELINE pricing at target margin."
                         )
-                        analysis.recommendation = f"No competitor data available. Pricing set at target margin of {product.get('min_margin_percent', 30)*100:.0f}%."
+                        analysis.recommendation = f"No competitor data available. Pricing set at target margin of {product.get('min_margin_percent', 0.3)*100:.0f}%."
                     await emit(MessageType.ACTION,
                         f"📐 ALGORITHM DECISION for '{product['name']}':\n"
-                        f"  INPUT: cost=₹{base_cost:,.0f}, competitors=[], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
+                        f"  INPUT: cost={currency_symbol}{base_cost:,.2f}, competitors=[], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
                         f"  DECISION: No competitor data → BASELINE\n"
-                        f"  OUTPUT: ₹{final_price:,.0f} (target margin pricing)"
+                        f"  OUTPUT: {currency_symbol}{final_price:,.2f} (target margin pricing)"
                     )
                 else:
-                    await emit(MessageType.THINKING, f"✅ MATCH strategy: Best competitor ₹{lowest_comp:,.0f}, our price ₹{final_price:,.0f}.")
+                    await emit(MessageType.THINKING, f"✅ MATCH strategy: Best competitor {currency_symbol}{lowest_comp:,.2f}, our price {currency_symbol}{final_price:,.2f}.")
                     await emit(MessageType.ACTION,
                         f"📐 ALGORITHM DECISION for '{product['name']}':\n"
-                        f"  INPUT: cost=₹{base_cost:,.0f}, competitors=[₹{', ₹'.join(f'{p:,.0f}' for p in comp_prices_floats)}], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
-                        f"  DECISION: min_competitor(₹{min(comp_prices_floats):,.0f}) > cost(₹{base_cost:,.0f}) → MATCH\n"
-                        f"  OUTPUT: ₹{final_price:,.0f} (undercut lowest competitor while defending margin)"
+                        f"  INPUT: cost={currency_symbol}{base_cost:,.2f}, competitors=[{', '.join(f'{currency_symbol}{p:,.2f}' for p in comp_prices_floats)}], margin={product.get('min_margin_percent', 0.3)*100:.0f}%\n"
+                        f"  DECISION: min_competitor({currency_symbol}{min(comp_prices_floats):,.2f}) > cost({currency_symbol}{base_cost:,.2f}) → MATCH\n"
+                        f"  OUTPUT: {currency_symbol}{final_price:,.2f} (undercut lowest competitor while defending margin)"
                     )
-                    
+
                 competitor_analyses.append(analysis)
-                
+
                 comp_display_name = analysis.competitor_name
                 if comp_display_name == "None" and market_research_context:
                     comp_display_name = "Market Benchmarks"
-                
+
                 analysis_details.append(
                     f"{product['name']} vs {comp_display_name}: "
-                    f"Our ₹{unit_price:,.0f} vs Their {('₹'+format(lowest_comp, ',.0f')) if lowest_comp > 0 else 'Unknown'} — {market_research_context if market_research_context else analysis.recommendation}"
+                    f"Our {currency_symbol}{unit_price:,.2f} vs Their {((currency_symbol)+format(lowest_comp, ',.2f')) if lowest_comp > 0 else 'Unknown'} — {market_research_context if market_research_context else analysis.recommendation}"
                 )
             else:
-                # No match - use estimated pricing
                 await emit(MessageType.THINKING,
                     f"No direct match in internal catalog for '{scope_item.item_name}'. "
                     f"Using estimation based on similar items."
@@ -316,43 +437,17 @@ class PricingStrategist:
                     total_price=estimated_price * scope_item.quantity,
                 ))
 
-        # Append single benchmark summary line if market research was used
-        if benchmarks_used:
-            analysis_details.append(
-                "Pricing accurately aligned with competitive local market benchmarks."
-            )
-
-        # Calculate totals with REGIONAL tax detection (Twist 1)
+        # ── 4. Calculate Totals ──
         subtotal = sum(item.total_price for item in line_items)
         value_adds_total = sum(va.unit_price for va in value_add_items)
-
-        # Detect regional tax based on currency
-        currency = requirements.budget_currency or "INR"
-        tax_region_map = {
-            "USD": "US",
-            "GBP": "UK",
-            "EUR": "EU",
-            "INR": "IN",
-        }
-        region_code = tax_region_map.get(currency, self.tax_data.get("default_region", "IN"))
-
-        # Handle EU (EUR) — not in tax_rates.json, use 19% VAT
-        if region_code == "EU":
-            tax_rate = 0.19
-            tax_label = "VAT"
-        else:
-            region_tax = self.tax_data.get("tax_rates", {}).get(region_code, {})
-            tax_rate = region_tax.get("rate", 0.18)
-            tax_label = region_tax.get("name", "Tax").split(" (")[0]  # "GST", "Sales Tax", "VAT"
-
         tax_amount = subtotal * tax_rate
         total = subtotal + tax_amount
 
         await emit(MessageType.RESULT,
             f"Pricing Summary:\n"
-            f"• Subtotal: {currency} {subtotal:,.0f}\n"
-            f"• {tax_label} ({tax_rate*100:.0f}%): {currency} {tax_amount:,.0f}\n"
-            f"• Total: {currency} {total:,.0f}\n"
+            f"• Subtotal: {currency_symbol}{subtotal:,.2f}\n"
+            f"• {tax_name} ({tax_rate*100:.0f}%): {currency_symbol}{tax_amount:,.2f}\n"
+            f"• Total: {currency_symbol}{total:,.2f}\n"
             f"• Value-Adds Included: {len(value_add_items)} items (at no extra cost)"
         )
 
@@ -363,7 +458,7 @@ class PricingStrategist:
                 "This positions us as the premium, value-driven choice."
             )
 
-        # Generate LLM-powered rationale
+        # ── 5. Generate LLM-powered Rationale ──
         await emit(MessageType.ACTION, "Generating strategic pricing rationale using AI analysis...")
 
         analysis_summary = "\n".join(analysis_details) if analysis_details else "No competitor data available for comparison."
@@ -372,9 +467,8 @@ class PricingStrategist:
         ) if value_add_items else "No value-adds recommended."
 
         try:
-            similar_rfps_summary = ""
+            similar_rfps_data = []
             if similar_rfps:
-                similar_rfps_data = []
                 for sr in similar_rfps:
                     rfp = sr.get("rfp", {})
                     similar_rfps_data.append({
@@ -384,10 +478,7 @@ class PricingStrategist:
                         "currency": rfp.get("currency", ""),
                         "combined_score": sr.get("combined_score", 0),
                     })
-                similar_rfps_json = json.dumps(similar_rfps_data, indent=2)
-                similar_rfps_summary = f"{len(similar_rfps)} similar historical RFPs found with pricing benchmarks."
-            else:
-                similar_rfps_json = "No historical similar RFPs found in database."
+            similar_rfps_json = json.dumps(similar_rfps_data, indent=2) if similar_rfps_data else "No historical similar RFPs found in database."
 
             prompt_text = STRATEGY_PROMPT.format(
                 requirements_json=json.dumps(requirements.model_dump(), indent=2, default=str),
@@ -404,7 +495,6 @@ class PricingStrategist:
             llm_response_msg = await self.llm.ainvoke(prompt_text)
             llm_response = str(llm_response_msg.content) if hasattr(llm_response_msg, 'content') else str(llm_response_msg)
 
-            # Parse rationale
             rationale_data = self._parse_rationale(llm_response)
             pricing_rationale = rationale_data.get("pricing_rationale", "")
             strategy_summary = rationale_data.get("strategy_summary", "")
@@ -416,15 +506,18 @@ class PricingStrategist:
             line_items=line_items,
             subtotal=subtotal,
             tax_rate=tax_rate,
-            tax_label=tax_label,
+            tax_name=tax_name,
             tax_amount=tax_amount,
             total=total,
-            currency=requirements.budget_currency or "INR",
+            currency=target_curr,
+            currency_symbol=currency_symbol,
             competitor_analyses=competitor_analyses,
             value_adds=value_add_items,
             value_adds_total=value_adds_total,
             pricing_rationale=pricing_rationale,
             strategy_summary=strategy_summary,
+            is_pivot_strategy=value_differentiation_triggered,
+            fx_rate_used=currency_rate,
         )
 
         await emit(MessageType.COMPLETE, "Pricing analysis and competitive strategy complete.")

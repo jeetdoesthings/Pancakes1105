@@ -328,11 +328,8 @@ function streamAgentFeed(url) {
         try {
             const msg = JSON.parse(event.data);
 
-            console.log('SSE message received:', msg.type, msg.agent);
-
             if (msg.type === 'job_state') {
                 // Final state message
-                console.log('Job state received:', msg.job_status);
                 state.jobData = {
                     extracted_requirements: msg.extracted_requirements,
                     universal_rfp: msg.universal_rfp,
@@ -342,15 +339,12 @@ function streamAgentFeed(url) {
                 };
 
                 if (msg.job_status === 'awaiting_approval') {
-                    console.log('Calling onProcessingComplete()');
                     eventSource.close();
                     onProcessingComplete();
                 } else if (msg.job_status === 'completed') {
-                    console.log('Calling onPdfReady()');
                     eventSource.close();
                     onPdfReady();
                 } else if (msg.job_status === 'error') {
-                    console.log('Job error:', msg.job_status);
                     eventSource.close();
                     setGlobalStatus('error', 'Error');
                     updateHistoryStatus(state.jobId, 'error');
@@ -363,18 +357,16 @@ function streamAgentFeed(url) {
             updateAgentChips(msg);
 
         } catch (e) {
-            console.warn('Parse error:', e, 'Raw data:', event.data.substring(0, 100));
+            console.warn('Parse error:', e);
         }
     };
 
     eventSource.onerror = () => {
         console.log('SSE onerror fired, jobData:', !!state.jobData, 'jobId:', state.jobId);
         eventSource.close();
-        // Check if we got data anyway
         if (state.jobData) {
             onProcessingComplete();
         } else if (state.jobId) {
-            // Fallback: poll job status directly
             console.log('SSE closed without job_state, polling job status...');
             pollJobStatus(state.jobId);
         }
@@ -384,7 +376,7 @@ function streamAgentFeed(url) {
 // Fallback polling when SSE doesn't deliver job_state
 function pollJobStatus(jobId) {
     let attempts = 0;
-    const maxAttempts = 60; // 60 seconds max
+    const maxAttempts = 60;
     const interval = setInterval(async () => {
         attempts++;
         try {
@@ -485,10 +477,9 @@ async function onPdfReady() {
         els.downloadPdfBtn.href = blobUrl;
         els.downloadPdfBtn.setAttribute('download', filename);
         
-        // Clean up the URL object after clicking
-        els.downloadPdfBtn.onclick = () => {
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-        };
+        // No longer revoking immediately so that multiple clicks work.
+        // It will be cleaned up implicitly when the next job is started or the page reloads.
+        els.downloadPdfBtn.onclick = null;
         
         els.downloadPdfBtn.innerHTML = `
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -517,13 +508,13 @@ function addFeedMessage(msg) {
     const empty = els.feedContainer.querySelector('.feed-empty');
     if (empty) empty.remove();
 
-    const agentEmoji = getAgentEmoji(msg.agent);
+    const agentIcon = getAgentIcon(msg.agent);
     const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
 
     const div = document.createElement('div');
     div.className = `feed-message type-${msg.type}`;
     div.innerHTML = `
-        <div class="feed-avatar">${agentEmoji}</div>
+        <div class="feed-avatar">${agentIcon}</div>
         <div class="feed-body">
             <div class="feed-header">
                 <span class="feed-agent-name">${msg.agent}</span>
@@ -538,15 +529,16 @@ function addFeedMessage(msg) {
     els.feedContainer.scrollTop = els.feedContainer.scrollHeight;
 }
 
-function getAgentEmoji(agent) {
+function getAgentIcon(agent) {
     const map = {
-        'Junior Analyst': '🔍',
-        'Pricing Strategist': '📊',
-        'Senior Copywriter': '✍️',
-        'Orchestrator': '🤖',
-        'PDF Generator': '📄',
+        'Junior Analyst': 'search',
+        'Pricing Strategist': 'currency_exchange',
+        'Senior Copywriter': 'stylus_fountain_pen',
+        'Orchestrator': 'smart_toy',
+        'PDF Generator': 'description',
     };
-    return map[agent] || '⚙️';
+    const icon = map[agent] || 'settings';
+    return `<span class="material-symbols-rounded">${icon}</span>`;
 }
 
 function updateAgentChips(msg) {
@@ -635,8 +627,8 @@ function populateReview() {
                         <tr>
                             <td>${item.item_name}</td>
                             <td>${item.quantity}</td>
-                            <td style="text-align:right">₹${formatNumber(item.unit_price)}</td>
-                            <td style="text-align:right">₹${formatNumber(item.total_price)}</td>
+                            <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(item.unit_price)}</td>
+                            <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(item.total_price)}</td>
                         </tr>
                     `).join('')}
                     ${(pricing.value_adds || []).map(va => `
@@ -649,15 +641,15 @@ function populateReview() {
                     `).join('')}
                     <tr class="total-row">
                         <td colspan="3"><strong>Subtotal</strong></td>
-                        <td style="text-align:right">₹${formatNumber(pricing.subtotal)}</td>
+                        <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(pricing.subtotal)}</td>
                     </tr>
                     <tr class="total-row">
-                        <td colspan="3"><strong>GST (${(pricing.tax_rate * 100).toFixed(0)}%)</strong></td>
-                        <td style="text-align:right">₹${formatNumber(pricing.tax_amount)}</td>
+                        <td colspan="3"><strong>Tax (${(pricing.tax_rate * 100).toFixed(0)}%)</strong></td>
+                        <td style="text-align:right">${pricing.currency_symbol || '₹'}${formatNumber(pricing.tax_amount)}</td>
                     </tr>
                     <tr class="total-row">
                         <td colspan="3"><strong>TOTAL</strong></td>
-                        <td style="text-align:right"><strong>₹${formatNumber(pricing.total)}</strong></td>
+                        <td style="text-align:right"><strong>${pricing.currency_symbol || '₹'}${formatNumber(pricing.total)}</strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -680,7 +672,7 @@ function populateReview() {
                         ${pricing.competitor_analyses.map(ca => `
                             <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
                                 <strong>${ca.competitor_name}</strong> — ${ca.product_id}<br>
-                                ${ca.competitor_price > 0 ? `Their Price: ₹${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ₹${formatNumber(ca.our_price)}<br>
+                                ${ca.competitor_price > 0 ? `Their Price: ${pricing.currency_symbol || '₹'}${formatNumber(ca.competitor_price)} | ` : ''}Our Price: ${pricing.currency_symbol || '₹'}${formatNumber(ca.our_price)}<br>
                                 <span style="color:var(--text-muted);font-size:12px">${ca.recommendation}</span>
                             </div>
                         `).join('')}
@@ -725,53 +717,6 @@ function populateReview() {
         `;
 
         $('#tab-proposal').innerHTML = html;
-    }
-
-    // Universal JSON tab
-    const universalJson = state.jobData?.universal_rfp;
-    if (universalJson) {
-        let html = `
-            <div class="review-item" style="grid-column:1/-1">
-                <div class="review-item-label">UniversalRFP Schema — Canonical Intermediate Format</div>
-                <div class="review-item-value">
-                    <pre class="json-viewer">${JSON.stringify(universalJson, null, 2)}</pre>
-                </div>
-            </div>
-        `;
-
-        // Similar RFPs sub-section
-        const similarRfps = state.jobData?.similar_rfps;
-        if (similarRfps && similarRfps.length > 0) {
-            html += `
-                <div class="review-item" style="grid-column:1/-1">
-                    <div class="review-item-label">🔍 Similar Historical RFPs Retrieved (${similarRfps.length} found)</div>
-                    <div class="review-item-value">
-                        ${similarRfps.map((sr, i) => `
-                            <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
-                                <strong>[${i+1}] ${sr.rfp.title}</strong> <span style="color:var(--accent-warning);font-size:11px">score: ${sr.combined_score.toFixed(2)}</span><br>
-                                <span style="color:var(--text-muted);font-size:12px">
-                                    Product: ${sr.rfp.productName} | Category: ${sr.rfp.category || 'N/A'} | 
-                                    Budget: ${sr.rfp.currency} ${sr.rfp.budget ? sr.rfp.budget.toLocaleString() : 'N/A'} | 
-                                    FTS: ${sr.fts_score.toFixed(2)} | Semantic: ${sr.semantic_score.toFixed(2)}
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        $('#tab-universal-json').innerHTML = html;
-    } else {
-        $('#tab-universal-json').innerHTML = `
-            <div class="review-item" style="grid-column:1/-1">
-                <div class="review-item-label">UniversalRFP Schema</div>
-                <div class="review-item-value" style="color:var(--text-muted)">
-                    No UniversalRFP object available. This object is the canonical structured extraction 
-                    that all downstream agents consume.
-                </div>
-            </div>
-        `;
     }
 }
 
@@ -938,7 +883,7 @@ function startNewRfp() {
     clearFeed();
     els.feedContainer.innerHTML = `
         <div class="feed-empty">
-            <div class="feed-empty-icon">🤖</div>
+            <div class="feed-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">smart_toy</span></div>
             <p>Agent reasoning will appear here in real-time...</p>
         </div>
     `;
@@ -1033,18 +978,19 @@ function closeHistory() {
 
 function getStatusIcon(status) {
     const map = {
-        'completed': '✅',
-        'error': '❌',
-        'processing': '⚙️',
-        'analyzing': '🔍',
-        'pricing': '📊',
-        'drafting': '✍️',
-        'awaiting_approval': '⏳',
-        'revising': '🔄',
-        'generating_pdf': '📄',
-        'pending': '🕐',
+        'completed': 'check_circle',
+        'error': 'cancel',
+        'processing': 'sync',
+        'analyzing': 'search',
+        'pricing': 'currency_exchange',
+        'drafting': 'stylus_fountain_pen',
+        'awaiting_approval': 'pending',
+        'revising': 'published_with_changes',
+        'generating_pdf': 'description',
+        'pending': 'schedule',
     };
-    return map[status] || '📋';
+    const icon = map[status] || 'assignment';
+    return `<span class="material-symbols-rounded">${icon}</span>`;
 }
 
 function getStatusCategory(status) {
@@ -1058,7 +1004,7 @@ function renderHistoryList() {
     if (state.history.length === 0) {
         els.historyList.innerHTML = `
             <div class="history-empty">
-                <div class="history-empty-icon">📋</div>
+                <div class="history-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">assignment</span></div>
                 <p>No previous RFPs yet. Process your first RFP to see it here.</p>
             </div>
         `;

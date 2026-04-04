@@ -1,11 +1,16 @@
 import json
 import os
+import requests
+from functools import lru_cache
 from typing import List, Dict, Any
 from langchain_core.tools import tool
 from app.config import settings
 
+@lru_cache(maxsize=32)
 def _load_json(filename: str) -> dict:
     filepath = os.path.join(settings.DATA_DIR, filename)
+    if not os.path.exists(filepath):
+        return {}
     with open(filepath, "r") as f:
         return json.load(f)
 
@@ -107,3 +112,71 @@ def calculate_profit_margin_tool(cost: float, price: float) -> str:
         return "Margin is 0% (divide by zero avoided for 0 price)."
     margin = ((price - cost) / price) * 100
     return f"Margin is {margin:.2f}%"
+
+@tool
+def get_currency_conversion_tool(base_currency: str, target_currency: str) -> str:
+    """Gets the conversion rate from base_currency (e.g., INR) to target_currency (e.g., USD).
+    Uses real-time data from Frankfurter API with local cache as backup.
+    """
+    # 1. Try Frankfurter API (Real-time)
+    try:
+        url = f"https://api.frankfurter.app/latest?from={base_currency}&to={target_currency}"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            rate = data.get("rates", {}).get(target_currency)
+            if rate:
+                return f"REAL-TIME Rate: 1 {base_currency} = {rate:.4f} {target_currency} (Date: {data.get('date')})"
+    except Exception:
+        pass
+
+    # 2. Try DuckDuckGo (Backup web search)
+    query = f"exchange rate {base_currency} to {target_currency}"
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=2))
+            if results:
+                formatted = "\n".join([f"- {r['title']}: {r['body']}" for r in results])
+                return f"Live Exchange Rate Research (Fallback):\n{formatted}"
+    except Exception:
+        pass
+
+    # 3. Last Resort: Local static data
+    data = _load_json("tax_rates.json")
+    rates = data.get("currency_rates", {})
+    if base_currency == "INR" and target_currency in rates:
+        return f"Static Rate: 1 INR = {1 / rates[target_currency]:.4f} {target_currency} (Rate: {rates[target_currency]})"
+
+    return f"Estimate: Assume 1 USD approx 83.5 INR, 1 EUR approx 90.3 INR, 1 GBP approx 105.8 INR."
+
+@tool
+def get_tax_rate_tool(country_code: str) -> str:
+    """Looks up the appropriate tax rate (e.g., VAT, GST) for a given 2-letter country code (e.g., IN, US, UK).
+    Falls back to a live search if the country code is unknown.
+    """
+    data = _load_json("tax_rates.json")
+    rates = data.get("tax_rates", {})
+
+    if country_code in rates:
+        return json.dumps(rates[country_code])
+
+    # Live search fallback for unknown countries
+    query = f"current VAT or GST tax rate in {country_code} for consulting services"
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            search_res = list(ddgs.text(query, max_results=1))
+            if search_res:
+                return json.dumps({
+                    "name": "Local Tax (Estimated)",
+                    "rate": 0.15,
+                    "source": search_res[0]['body'][:100]
+                })
+    except Exception:
+        pass
+
+    return json.dumps({
+        "name": data.get("default_tax_name", "Tax"),
+        "rate": data.get("default_tax_rate", 0.18)
+    })

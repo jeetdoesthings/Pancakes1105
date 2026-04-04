@@ -194,6 +194,10 @@
         }
         .text-right { text-align: right; }
 
+        /* ---- Page break avoidance ---- */
+        .pivot-box, .international-box, .strategy-box { page-break-inside: avoid; }
+        .pricing-table { page-break-inside: avoid; }
+
         /* ---- Value-Add Badge ---- */
         .value-add-badge {
             display: inline-block;
@@ -416,8 +420,8 @@
                 {% endif %}
             </td>
             <td>{{ va.quantity }}</td>
-            <td class="text-right" style="color: #047857; font-weight: 600;">$0.00</td>
-            <td class="text-right" style="color: #047857; font-weight: 600;">$0.00</td>
+            <td class="text-right" style="color: #047857; font-weight: 600;">{{ currency }} 0.00</td>
+            <td class="text-right" style="color: #047857; font-weight: 600;">{{ currency }} 0.00</td>
         </tr>
         {% endfor %}
         {% endif %}
@@ -448,7 +452,11 @@
         </tr>
         <tr>
             <td style="border:none;padding:4px 0;"><strong>Tax Regime:</strong></td>
-            <td style="border:none;padding:4px 0;">{{ pricing.tax_label }} ({{ (pricing.tax_rate * 100) | int }}%)</td>
+            <td style="border:none;padding:4px 0;">{{ pricing.tax_name }} ({{ (pricing.tax_rate * 100) | int }}%)</td>
+        </tr>
+        <tr>
+            <td style="border:none;padding:4px 0;"><strong>Exchange Rate Used:</strong></td>
+            <td style="border:none;padding:4px 0;">1 INR = {{ pricing.fx_rate_used | round(4) }} {{ currency }} (live)</td>
         </tr>
         <tr>
             <td style="border:none;padding:4px 0;"><strong>Auto-applied by:</strong></td>
@@ -459,7 +467,7 @@
 {% endif %}
 
 <!-- ========== PIVOT STRATEGY CALLOUT (Twist 2) ========== -->
-{% if pricing.value_adds %}
+{% if pricing.is_pivot_strategy %}
 <div class="pivot-box">
     <h3>⚠️ PIVOT STRATEGY ACTIVATED</h3>
     <p>Competitor price dropped below our base production cost. Matching this price would erode margins.
@@ -478,7 +486,7 @@
             <tr>
                 <td><strong>{{ va.item_name }}</strong></td>
                 <td>{{ va.description }}</td>
-                <td class="text-right">{{ va.unit_price | format_currency(currency) }}</td>
+                <td class="text-right">{{ currency }} 0.00</td>
                 <td style="text-align:center"><span class="included-badge">INCLUDED FREE</span></td>
             </tr>
             {% endfor %}
@@ -504,7 +512,7 @@
             {% for conv in currency_conversions %}
             <tr>
                 <td><strong>{{ conv.currency }}</strong></td>
-                <td class="text-right">{{ conv.symbol }}{{ conv.amount | format_number }}</td>
+                <td class="text-right">{{ conv.currency }} {{ conv.amount | format_number }}</td>
                 <td class="text-right">{{ conv.rate_display }}</td>
             </tr>
             {% endfor %}

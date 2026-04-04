@@ -155,6 +155,7 @@ async def stream_processing(job_id: str):
                                 "job_status": job.status.value,
                                 "extracted_requirements": job.extracted_requirements.model_dump() if job.extracted_requirements else None,
                                 "universal_rfp": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("universal_rfp"),
+                                "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
                                 "pricing_strategy": job.pricing_strategy.model_dump() if job.pricing_strategy else None,
                                 "proposal_draft": job.proposal_draft.model_dump() if job.proposal_draft else None,
                             }, ensure_ascii=False)
@@ -242,6 +243,7 @@ async def stream_revision(job_id: str, feedback_json: Optional[str] = None):
                             "job_status": final_job.status.value,
                             "extracted_requirements": final_job.extracted_requirements.model_dump() if final_job.extracted_requirements else None,
                             "universal_rfp": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("universal_rfp"),
+                            "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
                             "pricing_strategy": final_job.pricing_strategy.model_dump() if final_job.pricing_strategy else None,
                             "proposal_draft": final_job.proposal_draft.model_dump() if final_job.proposal_draft else None,
                         }, ensure_ascii=False)
@@ -301,6 +303,8 @@ async def approve_proposal(job_id: str):
                             "timestamp": datetime.now().isoformat(),
                             "job_status": final_job.status.value,
                             "pdf_ready": final_job.pdf_path is not None,
+                            "universal_rfp": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("universal_rfp"),
+                            "similar_rfps": orchestrator.graph.get_state({"configurable": {"thread_id": job_id}}).values.get("similar_rfps"),
                         }, ensure_ascii=False)
                         yield f"data: {final_data}\n\n"
                         break

@@ -34,7 +34,7 @@ class PDFGenerator:
 
     @staticmethod
     def _format_currency(value, currency="INR"):
-        """Format a number as currency."""
+        """Format a number as currency (PDF-safe text symbols)."""
         if value is None:
             return "N/A"
         try:
@@ -42,13 +42,13 @@ class PDFGenerator:
         except (ValueError, TypeError):
             return "N/A"
         if currency == "INR":
-            return f"\u20b9{val:,.0f}"
+            return f"Rs. {val:,.0f}"
         elif currency == "USD":
             return f"${val:,.2f}"
         elif currency == "EUR":
-            return f"\u20ac{val:,.2f}"
+            return f"EUR {val:,.2f}"
         elif currency == "GBP":
-            return f"\u00a3{val:,.2f}"
+            return f"GBP {val:,.2f}"
         return f"{currency} {val:,.2f}"
 
     @staticmethod

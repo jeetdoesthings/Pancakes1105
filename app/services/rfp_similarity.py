@@ -77,6 +77,9 @@ class RFPSimilarityService:
                 rows = cursor.fetchall()
                 for row in rows:
                     rfp_dict = dict(row)
+                    # Truncate productName to avoid validation errors
+                    if rfp_dict.get("productName") and len(rfp_dict["productName"]) > 95:
+                        rfp_dict["productName"] = rfp_dict["productName"][:92] + "..."
                     # Score by token overlap with productName + description
                     text = f"{rfp_dict.get('productName', '')} {rfp_dict.get('description', '')} {rfp_dict.get('title', '')}".lower()
                     score = sum(1 for t in tokens if t in text) / len(tokens)

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=assignment,cancel,check_circle,currency_exchange,description,pending,published_with_changes,schedule,search,settings,smart_toy,stylus_fountain_pen,sync" />
     <link rel="stylesheet" href="/static/css/style.css?v=1.1">
 </head>
 <body>
@@ -170,7 +171,7 @@ Example:
                 <!-- Agent Status Cards -->
                 <div class="agent-status-bar">
                     <div class="agent-chip" id="chipAnalyst" data-status="waiting">
-                        <div class="agent-chip-icon">🔍</div>
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">search</span></div>
                         <div class="agent-chip-info">
                             <span class="agent-chip-name">Junior Analyst</span>
                             <span class="agent-chip-status">Waiting</span>
@@ -178,7 +179,7 @@ Example:
                     </div>
                     <div class="agent-connector">→</div>
                     <div class="agent-chip" id="chipStrategist" data-status="waiting">
-                        <div class="agent-chip-icon">📊</div>
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">currency_exchange</span></div>
                         <div class="agent-chip-info">
                             <span class="agent-chip-name">Pricing Strategist</span>
                             <span class="agent-chip-status">Waiting</span>
@@ -186,7 +187,7 @@ Example:
                     </div>
                     <div class="agent-connector">→</div>
                     <div class="agent-chip" id="chipCopywriter" data-status="waiting">
-                        <div class="agent-chip-icon">✍️</div>
+                        <div class="agent-chip-icon"><span class="material-symbols-rounded">stylus_fountain_pen</span></div>
                         <div class="agent-chip-info">
                             <span class="agent-chip-name">Senior Copywriter</span>
                             <span class="agent-chip-status">Waiting</span>
@@ -197,7 +198,7 @@ Example:
                 <!-- Live Feed -->
                 <div class="feed-container" id="feedContainer">
                     <div class="feed-empty">
-                        <div class="feed-empty-icon">🤖</div>
+                        <div class="feed-empty-icon"><span class="material-symbols-rounded" style="font-size: 48px;">smart_toy</span></div>
                         <p>Agent reasoning will appear here in real-time...</p>
                     </div>
                 </div>
@@ -220,7 +221,6 @@ Example:
                     <button class="review-tab active" data-tab="requirements">Requirements</button>
                     <button class="review-tab" data-tab="pricing">Pricing</button>
                     <button class="review-tab" data-tab="proposal">Proposal</button>
-                    <button class="review-tab" data-tab="universal-json">Universal JSON</button>
                 </div>
 
                 <!-- Tab Content -->
@@ -228,7 +228,6 @@ Example:
                     <div class="review-tab-content active" id="tab-requirements"></div>
                     <div class="review-tab-content" id="tab-pricing"></div>
                     <div class="review-tab-content" id="tab-proposal"></div>
-                    <div class="review-tab-content" id="tab-universal-json"></div>
                 </div>
 
                 <!-- Feedback Area -->
