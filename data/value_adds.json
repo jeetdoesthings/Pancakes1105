@@ -1,0 +1,60 @@
+{
+  "value_adds": [
+    {
+      "id": "EXTENDED_WARRANTY_1YR",
+      "name": "1-Year Extended Warranty",
+      "description": "Extends the standard manufacturer warranty by an additional 12 months, covering parts and labor.",
+      "estimated_cost": 25000,
+      "category": "hardware"
+    },
+    {
+      "id": "PREMIUM_SUPPORT_6MO",
+      "name": "6-Month Premium Support Package",
+      "description": "Priority 24/7 technical support with 4-hour response SLA for 6 months.",
+      "estimated_cost": 60000,
+      "category": "service"
+    },
+    {
+      "id": "EXPEDITED_DELIVERY",
+      "name": "Expedited Delivery (within 2 weeks)",
+      "description": "Guaranteed hardware delivery within 2 weeks of order confirmation.",
+      "estimated_cost": 15000,
+      "category": "logistics"
+    },
+    {
+      "id": "FREE_CONSULTING_8HR",
+      "name": "8 Hours Free IT Consulting",
+      "description": "Complimentary 8 hours of expert IT consulting for infrastructure planning and optimization.",
+      "estimated_cost": 40000,
+      "category": "service"
+    },
+    {
+      "id": "PROACTIVE_MONITORING_3MO",
+      "name": "3-Month Proactive Monitoring",
+      "description": "24/7 infrastructure monitoring with automated alerts and monthly health reports for 3 months.",
+      "estimated_cost": 35000,
+      "category": "service"
+    },
+    {
+      "id": "EXTRA_TRAINING_DAY",
+      "name": "1 Additional Training Day",
+      "description": "An extra day of hands-on training for your IT staff covering advanced topics.",
+      "estimated_cost": 30000,
+      "category": "training"
+    },
+    {
+      "id": "DOCUMENTATION_PACKAGE",
+      "name": "Comprehensive Documentation Package",
+      "description": "Detailed network diagrams, configuration guides, runbooks, and disaster recovery procedures.",
+      "estimated_cost": 20000,
+      "category": "service"
+    },
+    {
+      "id": "QUARTERLY_HEALTH_CHECK",
+      "name": "4 Quarterly Health Checks",
+      "description": "On-site quarterly infrastructure health checks and performance optimization sessions for 1 year.",
+      "estimated_cost": 50000,
+      "category": "service"
+    }
+  ]
+}

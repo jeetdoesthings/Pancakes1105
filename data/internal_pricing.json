@@ -1,0 +1,104 @@
+{
+  "products": [
+    {
+      "id": "GIS_APP_DEV_CUSTOM",
+      "name": "GIS Application & Dashboard Customization",
+      "category": "software",
+      "standard_price": 850000,
+      "min_margin_percent": 0.35,
+      "description": "Customization of GIS dashboard for Nagar Panchayat Lalganj, including integration with existing MIS systems and census records.",
+      "base_cost": 552500.0,
+      "currency": "INR"
+    },
+    {
+      "id": "MOBILE_APP_FIELD_DATA",
+      "name": "Mobile App for Field Data Collection",
+      "category": "software",
+      "standard_price": 450000,
+      "min_margin_percent": 0.3,
+      "description": "Android/iOS mobile application for on-field data collection, geotagging, and real-time synchronization with the central GIS server.",
+      "base_cost": 315000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "UAV_LIDAR_SURVEY",
+      "name": "UAV and LiDAR Survey Services",
+      "category": "service",
+      "standard_price": 1200000,
+      "min_margin_percent": 0.25,
+      "description": "High-resolution UAV aerial photography and LiDAR survey for topographic mapping and 3D modeling of the municipal area.",
+      "base_cost": 900000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "PROPERTY_POI_MAPPING",
+      "name": "Property & POI Mapping and Geotagging",
+      "category": "service",
+      "standard_price": 950000,
+      "min_margin_percent": 0.2,
+      "description": "Door-to-door property survey, Point of Interest (POI) mapping, and geotagging of all municipal assets and boundaries.",
+      "base_cost": 760000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "BASE_MAP_DIGITIZATION",
+      "name": "Geo-Referencing & Digitization of Existing Maps",
+      "category": "service",
+      "standard_price": 400000,
+      "min_margin_percent": 0.22,
+      "description": "Scanning, geo-referencing, and vectorization of existing municipal paper maps and district boundary records.",
+      "base_cost": 312000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "MASTER_PLAN_PREP",
+      "name": "Data Analysis & Master Plan Preparation",
+      "category": "service",
+      "standard_price": 550000,
+      "min_margin_percent": 0.28,
+      "description": "Comprehensive data analysis of surveyed information and preparation of the GIS-based Master Plan for urban development.",
+      "base_cost": 396000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "CLOUD_HOSTING_MAINT",
+      "name": "Cloud Hosting & Technical Support (4 Months)",
+      "category": "software",
+      "standard_price": 280000,
+      "min_margin_percent": 0.4,
+      "description": "Secure cloud infrastructure hosting for the GIS platform and 4 months of technical handholding and maintenance support.",
+      "base_cost": 168000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "STAFF_WORKSHOPS_TRAINING",
+      "name": "Internal Staff Training & Workshops",
+      "category": "service",
+      "standard_price": 200000,
+      "min_margin_percent": 0.2,
+      "description": "Capacity building workshops and hands-on training for Nagar Panchayat staff on using the GIS dashboard and mobile app.",
+      "base_cost": 160000.0,
+      "currency": "INR"
+    },
+    {
+      "id": "PENCIL_HB_GRADE",
+      "name": "HB Grade Pencils",
+      "category": "stationery",
+      "standard_price": 150,
+      "min_margin_percent": 0.25,
+      "description": "Standard HB grade pencils with hexagonal barrel and eraser tip. IS 1986 compliant.",
+      "base_cost": 80.0,
+      "currency": "INR"
+    },
+    {
+      "id": "STATIONERY_BULK_SUPPLY",
+      "name": "Bulk Stationery Supply Service",
+      "category": "service",
+      "standard_price": 50000,
+      "min_margin_percent": 0.2,
+      "description": "Bulk procurement and delivery service for office and school stationery supplies.",
+      "base_cost": 35000.0,
+      "currency": "INR"
+    }
+  ]
+}

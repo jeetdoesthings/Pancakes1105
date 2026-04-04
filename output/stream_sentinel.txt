@@ -1,0 +1,102 @@
+data: {"agent": "Orchestrator", "type": "status", "content": "🚀 Initiating RFP processing pipeline...", "timestamp": "2026-04-04T09:38:10.884704"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Junior Analyst agent for RFP document parsing...", "timestamp": "2026-04-04T09:38:10.884704"}
+
+data: {"agent": "Junior Analyst", "type": "status", "content": "Starting Hierarchical RAG document analysis...", "timestamp": "2026-04-04T09:38:10.884704"}
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Equipping tools to query the Vector Storage for specific sections...", "timestamp": "2026-04-04T09:38:10.884704"}
+
+data: {"agent": "Junior Analyst", "type": "action", "content": "Executing multi-step queries against the RFP Knowledge Base...", "timestamp": "2026-04-04T09:38:10.898239"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "RAG exploration complete. Extracting final structured JSON...", "timestamp": "2026-04-04T09:38:29.286411"}
+
+: keepalive
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Validating and normalising extracted data...", "timestamp": "2026-04-04T09:38:33.165307"}
+
+data: {"agent": "Junior Analyst", "type": "thinking", "content": "Low-confidence fields flagged for human review: date_issued, evaluation_criteria, project_timeline, submission_requirements, description, specifications", "timestamp": "2026-04-04T09:38:33.165307"}
+
+data: {"agent": "Junior Analyst", "type": "result", "content": "Successfully extracted requirements:\n• Project: IT Support\n• Client: Test Corp\n• Scope Items: 1 items identified\n• Budget: USD 50,000\n• Deadline: 2026-06-01", "timestamp": "2026-04-04T09:38:33.165307"}
+
+data: {"agent": "Junior Analyst", "type": "action", "content": "Identified → Server maintenance (Qty: 1, Category: service)", "timestamp": "2026-04-04T09:38:33.165307"}
+
+data: {"agent": "Junior Analyst", "type": "complete", "content": "RFP analysis complete. Awaiting human review before handoff.", "timestamp": "2026-04-04T09:38:33.165307"}
+
+data: {"agent": "Orchestrator", "type": "result", "content": "✅ UniversalRFP schema populated: rfpId=f63063af, title='IT Support', products='Server maintenance...', currency=USD", "timestamp": "2026-04-04T09:38:33.176215"}
+
+data: {"agent": "Orchestrator", "type": "status", "content": "🔍 No similar historical RFPs found in database. Proceeding with fresh analysis.", "timestamp": "2026-04-04T09:38:34.316634"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Pricing Strategist agent for competitive analysis & dynamic market research...", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "status", "content": "Starting competitive pricing analysis...", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "Analyzing 1 scope items against internal pricing catalog and competitor data...", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "Analyzing pricing for: Server maintenance (Qty: 1)...", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "Matched 'Server maintenance' to internal product 'UAV and LiDAR Survey Services' (Base Cost: ₹900,000, Standard Price: ₹1,200,000)", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "thinking", "content": "⚠️ PIVOT triggered: competitor ₹750,000 vs our cost ₹900,000. Adding value-add bundles.", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "📐 ALGORITHM DECISION for 'UAV and LiDAR Survey Services':\n  INPUT: cost=₹900,000, competitors=[₹750,000, ₹850,000], margin=25%\n  DECISION: min_competitor(₹750,000) ≤ cost(₹900,000) → PIVOT\n  OUTPUT: ₹1,125,000 (target margin preserved, value-adds compensate)", "timestamp": "2026-04-04T09:38:34.644620"}
+
+data: {"agent": "Pricing Strategist", "type": "result", "content": "Pricing Summary:\n• Subtotal: USD 1,200,000\n• Sales Tax (8%): USD 96,000\n• Total: USD 1,296,000\n• Value-Adds Included: 2 items (at no extra cost)", "timestamp": "2026-04-04T09:38:34.648487"}
+
+data: {"agent": "Pricing Strategist", "type": "action", "content": "Generating strategic pricing rationale using AI analysis...", "timestamp": "2026-04-04T09:38:34.648487"}
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Pricing Strategist", "type": "complete", "content": "Pricing analysis and competitive strategy complete.", "timestamp": "2026-04-04T09:38:40.111295"}
+
+data: {"agent": "Orchestrator", "type": "action", "content": "Activating Senior Copywriter agent for proposal drafting...", "timestamp": "2026-04-04T09:38:40.115238"}
+
+data: {"agent": "Senior Copywriter", "type": "status", "content": "Starting professional proposal drafting...", "timestamp": "2026-04-04T09:38:40.115238"}
+
+data: {"agent": "Senior Copywriter", "type": "thinking", "content": "Preparing to draft proposal for Test Corp's 'IT Support' project. Incorporating pricing strategy and 2 value-add recommendations...", "timestamp": "2026-04-04T09:38:40.115238"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Drafting Executive Summary and introduction...", "timestamp": "2026-04-04T09:38:40.116801"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Composing Technical Proposal sections for each deliverable...", "timestamp": "2026-04-04T09:38:40.116801"}
+
+data: {"agent": "Senior Copywriter", "type": "action", "content": "Writing Value Proposition with competitive differentiation...", "timestamp": "2026-04-04T09:38:40.116801"}
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+: keepalive
+
+data: {"agent": "Senior Copywriter", "type": "thinking", "content": "Processing and structuring the draft content...", "timestamp": "2026-04-04T09:38:52.596467"}
+
+data: {"agent": "Senior Copywriter", "type": "result", "content": "Proposal draft complete:\n• Executive Summary: ✓\n• Technical Sections: 1 sections\n• Project Plan: ✓\n• Value Proposition: ✓\n• Company Profile: ✓\n• Support Plan: ✓\n• Terms & Conditions: ✓", "timestamp": "2026-04-04T09:38:52.596467"}
+
+data: {"agent": "Senior Copywriter", "type": "complete", "content": "Professional proposal draft finalized and ready for review.", "timestamp": "2026-04-04T09:38:52.596467"}
+
+data: {"agent": "Orchestrator", "type": "status", "content": "✅ All agents have completed their work. Proposal is ready for your review and approval.", "timestamp": "2026-04-04T09:38:52.596467"}
+
